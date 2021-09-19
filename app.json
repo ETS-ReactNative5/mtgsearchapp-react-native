@@ -3,7 +3,6 @@
     "name": "MTG test app",
     "slug": "mymtgapp",
     "privacy": "public",
-    "sdkVersion": "36.0.0",
     "platforms": [
       "ios",
       "android",

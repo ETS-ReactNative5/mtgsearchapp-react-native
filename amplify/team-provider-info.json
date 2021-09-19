@@ -1,0 +1,20 @@
+{
+  "staging": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-mtgsearch-staging-05948-authRole",
+      "UnauthRoleArn": "arn:aws:iam::660403345263:role/amplify-mtgsearch-staging-05948-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::660403345263:role/amplify-mtgsearch-staging-05948-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-mtgsearch-staging-05948-deployment",
+      "UnauthRoleName": "amplify-mtgsearch-staging-05948-unauthRole",
+      "StackName": "amplify-mtgsearch-staging-05948",
+      "StackId": "arn:aws:cloudformation:us-east-1:660403345263:stack/amplify-mtgsearch-staging-05948/6599b7e0-11d2-11ec-9bfe-124b8f7e7c13",
+      "AmplifyAppId": "d2p28lxf51fb54"
+    },
+    "categories": {
+      "auth": {
+        "mtgsearch": {}
+      }
+    }
+  }
+}
