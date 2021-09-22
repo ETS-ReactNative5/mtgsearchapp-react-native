@@ -47,7 +47,7 @@ const CustomDrawerButton = ({ colorSelection, buttonColor }) => {
   }
   return (
     <DrawerItem
-      icon={() => <Image source={manaIconPath[buttonColor]} style={styles.manaSymbolIcon} key={buttonColor + 'symbol'} style={styles.manaSymbolIcon} ></Image>}
+      icon={() => <Image source={manaIconPath[buttonColor]} style={styles.manaSymbolIcon} key={buttonColor + 'symbol'} ></Image>}
       label={buttonColor}
       labelStyle={{ color: buttonColor == 'Black' ? "white" : clicked ? "white" : "black" }}
       style={[

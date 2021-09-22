@@ -27,7 +27,7 @@ const TabScreens = ({route }) => {
 
   useEffect(() => {
     setCurrentRoute(getFocusedRouteNameFromRoute(route))
-  })
+  },[route])
 
   // console.log('tab route', route)
   return (
@@ -289,7 +289,6 @@ const styles = StyleSheet.create({
     height: '90%',
     borderWidth:1,
     borderColor: 'rgba(245, 181, 219, .4)',
-    borderRadius: 10,
     shadowColor: '#f5b5db',
     shadowRadius: 10,
     shadowOpacity: .4,

@@ -7,7 +7,7 @@ export const CollectionScreen = () => {
     const { colorFilters, saveCollection, collection, alphabetical } = useContext(CollectionContext)
 
     const removeRow = (e) => {
-        const newTotalCards = totalCards
+        const newTotalCards = collection
         delete newTotalCards[e]
         saveCollection({ ...newTotalCards })
     }
