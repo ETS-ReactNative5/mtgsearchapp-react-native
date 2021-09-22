@@ -14,58 +14,69 @@ const Cardsearch = (props) => {
 
   return (
     <View style={styles.searchContainer}>
-      <Text style={styles.readMe}>This App searches and catalogues Magic: The Gathering cards.{"\n"}
-        Changing the amount will add them to your collection.{"\n"}
-        Clicking a set name will bring up different languages for each card.
-      </Text>
-      <TextInput multiline numberOfLines={1} {...props} style={styles.textinput} onChangeText={(e) => TextChange(e)}></TextInput>
+      <View style={styles.searchTextContainer }>
+        <Text style={styles.readMe}>This App searches and catalogues Magic: The Gathering cards.
+          Changing the amount will add them to your collection.
+          Clicking a set name will bring up different languages for each card.
+        </Text>
+        <TextInput {...props} style={styles.textinput} onChangeText={(e) => TextChange(e)}></TextInput>
+      </View>
       <TouchableOpacity style={styles.searchButton} onPress={() => handleClick()}>
         <Text style={styles.searchButtonText}>Search{"\n"}for{"\n"}Cards</Text>
       </TouchableOpacity>
     </View>
   )
 }
-
+/*
+each container's backgroundColor needs to be the color of the border?
+shadow is for iOS only
+#753BA5/'rgba(17, 255, 255, opacity)' = vaporwave purple
+#11FFFF = vaporwave blue
+*/
 const styles = StyleSheet.create({
+  searchTextContainer:{
+    display:'flex',
+    flexDirection:'column',
+    width:'80%',
+  },
   readMe: {
     color: 'white',
     padding: 10,
-    gridColumn: 1,
-    gridRow: 1,
+  },
+  searchContainer: {
+    display: 'flex',
+    flexDirection:'row',
+    height:'60%'
   },
   searchButton: {
     textAlign: 'center',
     justifyContent: 'center',
+    alignContent:'center',
     margin: 3,
+    borderColor : 'rgba(17, 255, 255, .4)',
+    borderWidth:1,
     borderRadius: 10,
+    top: '15%',
     shadowColor: '#11FFFF',
     shadowRadius: 10,
     shadowOpacity: .4,
-    width: '40%',
-    top: 25,
-    gridColumn: 2,
-    gridRow: 1 / 2,
-  },
-  searchContainer: {
-    display: 'grid',
-    gridTemplateColumns: `2fr 1fr`,
-    gridTemplateRows: `.5fr 1fr`,
-  },
-  textinput: {
-    borderColor: 'white',
-    backgroundColor: 'white',
-    height: 25,
-    gridColumn: 1,
-    gridRow: 2,
+    width:'18.5%'
   },
   searchButtonText: {
     color: '#11FFFF',
     textShadowColor: 'white',
     textShadowRadius: 5,
-    fontWeight: 700,
-    letterSpacing: '.1em',
+    fontWeight: "700",
+    letterSpacing: 1,
     fontSize: 18,
+    textAlign: 'center',
   },
+  textinput: {
+    borderColor: 'white',
+    backgroundColor: 'white',
+    height: 25,
+  },
+  
 });
 
 export default Cardsearch

@@ -1,26 +1,53 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, } from 'react-native';
 import { Icon } from 'react-native-elements'
+// import { SvgUri, Svg, G } from 'react-native-svg'
 
 const SetComponenets = (props) => {
-    const [iconDimensions, setIconDimensions] = useState({ width: 0, height: 0 })
+    // const [svgSource, setSvgSource] = useState(undefined)
+    const [pressed, setIsPressed] = useState(false)
 
     const handleOnPress = () => {
         let pic = props.setinfo.card_faces !== undefined ? props.setinfo.card_faces[0].image_uris.normal : props.setinfo.image_uris.normal
         let back = props.setinfo.card_faces !== undefined ? props.setinfo.card_faces[1].image_uris.normal : undefined;
-        props.highlight(props.set)
+        !pressed ? props.highlight(props.set) : props.highlight(undefined)
+        setIsPressed(!pressed)
         props.flipArt(pic, back)
     }
 
-    useEffect(() => {
-        Image.getSize(props.setinfo.icon_uri, (w, h) => w && h && setIconDimensions({ width: w, height: h }))
-    }, [])
+    // useEffect(() => {
+    //     const getSVG = async () => {
+    //         try {
+    //             const SVGstatus = await fetch(props.setinfo.icon_uri)
+    //             if (SVGstatus.status === 200 && SVGstatus.ok === true) {
+    //                 setSvgSource(SVGstatus.url.slice(0, SVGstatus.url.indexOf('?')))
+    //             }
+    //         } catch (err) {
+    //             console.log('error getting set svg', err)
+    //         }
+    //     }
+    //     getSVG()
+    // }, [])
 
     return (
         <View style={props.containerstyle}>
-            <TouchableOpacity style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', alignContent: 'center' }} onPress={() => { props.resetName(); props.createLanguages(props.setinfo); handleOnPress() }}>
+            <TouchableOpacity style={{
+                display: 'flex',
+                flexDirection: 'column',
+                // height: svgSource && 50,
+                borderWidth: 1,
+                borderColor: 'rgba(255, 0, 0, .4)',
+                borderRadius: 10,
+            }} onPress={() => {
+                props.createLanguages(props.setinfo);
+                handleOnPress()
+            }}>
                 <Text style={props.buttonstyle}>{props.set}</Text>
-                <Image source={props.setinfo.icon_uri} style={{ width: iconDimensions.width / 8, height: iconDimensions.height / 8 }} />
+                {/* {svgSource && <Svg viewBox='0 0 200 300' preserveAspectRatio="xMinYMin slice" >
+                    <G  >
+                        <SvgUri uri={svgSource}  />
+                    </G>
+                </Svg>} */}
             </TouchableOpacity>
         </View>
     )
@@ -55,6 +82,7 @@ const AmountComponents = (props) => {
 
 
 const Language = (props) => {
+
     return (
         <TouchableOpacity style={styles.languageButton} onPress={() => props.updateImage(props.foreignInfo.imageUrl, props.foreignInfo.name)}>
             <Text style={styles.languageText}>{props.foreignInfo.language}</Text>
@@ -67,24 +95,39 @@ export const NewTableRow = (props) => {
     const [imageUri, setImageUri] = useState(false)
     const [flipUri, setFlipUri] = useState(false)
     const [frontUri, setFrontUri] = useState(false)
-    const [currentSet, setCurrentSet] = useState('')
+    const [currentSet, setCurrentSet] = useState()
     const [foreignLanguageComps, setForeignLanguageComps] = useState([])
 
     const sets = Object.keys(props.mtginfo);
     let image = props.mtginfo[sets[0]].card_faces ? props.mtginfo[sets[0]].card_faces[0].image_uris.normal : props.mtginfo[sets[0]].image_uris.normal;
     let flip = props.mtginfo[sets[0]].card_faces ? props.mtginfo[sets[0]].card_faces[1].image_uris.normal : '';
     let languages;
-    
+
     const updateImage = (image, name) => {
         setImageUri(image)
         setDisplayName(name)
     }
 
     const createLanguages = (e) => {
-        languages = e.foreignNames ? e.foreignNames.map(l => <Language updateImage={updateImage} cardname={e.name} foreignInfo={l} key={l.name + l.language} />)
-            : e.card_faces && e.card_faces[0].foreignNames ? e.card_faces[0].foreignNames.map(l => <Language updateImage={updateImage} cardname={e.name} foreignInfo={l} key={l.name + l.language} />)
+        const english =  <Language
+            updateImage={updateImage}
+            cardname={props.name}
+            foreignInfo={{
+                imageUrl: image,
+                name: props.name,
+                language: 'English'
+            }}
+            key={props.name + 'English'} />
+
+        languages = e.foreignNames ?
+            e.foreignNames.map(l =>
+                <Language updateImage={updateImage} cardname={e.name} foreignInfo={l} key={l.name + l.language} />)
+            : e.card_faces && e.card_faces[0].foreignNames ?
+                e.card_faces[0].foreignNames.map(l =>
+                    <Language updateImage={updateImage} cardname={e.name} foreignInfo={l} key={l.name + l.language} />)
                 : []
-        setForeignLanguageComps(languages)
+
+        setForeignLanguageComps([english, ...languages])
     }
 
     const onImagePress = () => {
@@ -100,10 +143,6 @@ export const NewTableRow = (props) => {
         setFrontUri(front)
         setImageUri(front)
         if (back) setFlipUri(back)
-    }
-
-    const defaultName = () => {
-        setDisplayName(props.name)
     }
 
     return (
@@ -122,29 +161,30 @@ export const NewTableRow = (props) => {
                     {sets.map(i =>
                         <View key={`${props.name}_set_${i}`}>
                             <SetComponenets
-                                resetName={defaultName}
                                 createLanguages={createLanguages}
-                                highlight={() => rowHighlight(i)}
+                                highlight={rowHighlight}
                                 flipArt={flipArt}
                                 set={i}
                                 setinfo={props.mtginfo[i]}
-                                key={props.key + ' ' + i}
-                                buttonstyle={currentSet == i ? styles.highlightedButtonText : styles.setButtonText}
-                                containerstyle={currentSet == i ? styles.highlightedButtonContainer : styles.setButtonContainer}
+                                key={props.name + ' ' + i}
+                                buttonstyle={currentSet === i ? styles.highlightedButtonText : styles.setButtonText}
+                                containerstyle={currentSet === i ? styles.highlightedButtonContainer : styles.setButtonContainer}
                             />
                             <AmountComponents
-                                highlightedAmount={currentSet == i ? styles.highlightAmount : styles.amountInput}
+                                highlightedAmount={currentSet === i ? styles.highlightAmount : styles.amountInput}
                                 changeAmount={props.changeAmount}
                                 key={props.mtginfo[i].multiverse_ids[0] ? props.name + ' ' + props.mtginfo[i].multiverse_ids[0] : props.name + i}
                                 mtginfo={props.mtginfo[i]}
-                                highlightstyle={currentSet == i ? styles.highlightedAmountComponent : styles.amountComponent}
-                                highlightedText={currentSet == i ? 'white' : 'red'}
+                                highlightstyle={currentSet === i ? styles.highlightedAmountComponent : styles.amountComponent}
+                                highlightedText={currentSet === i ? 'white' : 'red'}
                             />
                         </View>
                     )}
                 </View>
             </View>
-            <View style={styles.languageContainer}>{foreignLanguageComps.map(i => i)}</View>
+            <View style={styles.languageContainer}>
+                {currentSet && foreignLanguageComps.map(i => i)}
+            </View>
         </View>
     )
 }
@@ -170,10 +210,13 @@ export const createTable = (cardsObj, filters, removeRow, changeCardDataAmount) 
         })
     }
 
-    displayComponents = filters.alphabetical ? displayComponents.sort((a,z)=> a.props.name.localeCompare(z.props.name)) : displayComponents.sort((a,z)=> z.props.name.localeCompare(a.props.name))
+    displayComponents = filters.alphabetical ? displayComponents.sort((a, z) => a.props.name.localeCompare(z.props.name)) : displayComponents.sort((a, z) => z.props.name.localeCompare(a.props.name))
     return displayComponents
 }
 
+/*
+#11FFFF rgba(17, 255, 255, .4) = vaporwave blue 
+*/
 const styles = StyleSheet.create({
     highlightedAmountComponent: {
         paddingBottom: 10,
@@ -194,11 +237,16 @@ const styles = StyleSheet.create({
     },
     languageText: {
         textAlign: 'center',
-        padding: 10
+        padding: 10,
+        color: '#11FFFF',
+        textShadowRadius: 5,
+        fontWeight: "700",
+        letterSpacing: 1,
+        borderRadius: 10,
     },
     languageButton: {
         width: '30%',
-        borderColor: 'black',
+        borderColor: `rgba(17, 255, 255, .4)`,
         borderWidth: 1,
         margin: 5,
     },
@@ -247,11 +295,12 @@ const styles = StyleSheet.create({
     cardContainer: {
         display: 'flex',
         flexDirection: 'row',
-        alignContent: 'space-between'
+        alignContent: 'space-between',
     },
     cardImage: {
         height: 210,
         width: 150,
+        borderRadius: 10,
     },
     cardImageTouchableOpacity: {
         height: 210,
@@ -266,10 +315,11 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         shadowOpacity: .4,
         marginBottom: 5,
+        width: `100%`,
     },
     setButtonText: {
         textAlign: 'center',
-        color: "red"
+        color: "red",
     },
     highlightedButtonContainer: {
         shadowColor: 'white',

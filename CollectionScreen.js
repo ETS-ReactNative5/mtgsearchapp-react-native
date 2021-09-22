@@ -1,10 +1,10 @@
 import React, { useContext } from "react";
 import { StyleSheet, View, ScrollView, } from 'react-native';
 import { createTable } from './NewTableRow';
-import { ColorContext } from './App';
+import { CollectionContext } from './CollectionContext';
 
 export const CollectionScreen = () => {
-    const { colorFilters, saveCollection, collection, alphabetical } = useContext(ColorContext)
+    const { colorFilters, saveCollection, collection, alphabetical } = useContext(CollectionContext)
 
     const removeRow = (e) => {
         const newTotalCards = totalCards

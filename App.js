@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { NavigationContainer, DrawerActions, getFocusedRouteNameFromRoute } from "@react-navigation/native"
 import { createDrawerNavigator } from '@react-navigation/drawer';
@@ -9,6 +9,7 @@ import { CustomDrawerContent } from './Tabs/ColorTabs';
 import { Amplify, Auth, Storage } from 'aws-amplify'
 import awsmobile from './src/aws-exports'
 import { withAuthenticator } from 'aws-amplify-react-native'
+import { CollectionContext } from './CollectionContext'
 
 Amplify.configure({
   ...awsmobile,
@@ -17,18 +18,18 @@ Amplify.configure({
   },
 })
 
-export const ColorContext = React.createContext()
-
 const DrawerNav = createDrawerNavigator()
 const Tab = createBottomTabNavigator();
 
-const TabScreens = ({ navigation, route }) => {
+const TabScreens = ({route }) => {
   const [currentRoute, setCurrentRoute] = useState()
+  const {uploadCollection} = useContext(CollectionContext)
 
   useEffect(() => {
     setCurrentRoute(getFocusedRouteNameFromRoute(route))
   })
 
+  // console.log('tab route', route)
   return (
     <Tab.Navigator
       tabBar={({ navigation }) =>
@@ -67,8 +68,8 @@ const TabScreens = ({ navigation, route }) => {
             <TouchableOpacity style={styles.filtersButton} title="Filters" onPress={() => { navigation.dispatch(DrawerActions.toggleDrawer()) }}>
               <Text style={styles.filtersText} >Filters</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => uploadCollection()} style={styles.saveCollection}>
-              <Text style={styles.saveCollectionText} >Save Collection</Text>
+            <TouchableOpacity onPress={() =>uploadCollection()} style={styles.saveCollection}>
+              <Text style={styles.saveCollectionText} >Save{"\n"}Collection</Text>
             </TouchableOpacity>
           </View>
         ),
@@ -78,8 +79,8 @@ const TabScreens = ({ navigation, route }) => {
           color: '#11FFFF',
           textShadowColor: '#11FFFF',
           textShadowRadius: 5,
-          fontWeight: 700,
-          letterSpacing: '.1em',
+          fontWeight: "700",
+          letterSpacing: 1,
           fontSize: 24,
           textAlign: 'center',
         }
@@ -89,9 +90,9 @@ const TabScreens = ({ navigation, route }) => {
           color: '#11FFFF',
           textShadowColor: 'white',
           textShadowRadius: 5,
-          fontWeight: 700,
-          letterSpacing: '.1em',
-          fontSize: 24,
+          fontWeight: "700",
+          letterSpacing: 1,
+          fontSize: 20,
           textAlign: 'center',
         }
       }} />
@@ -122,13 +123,14 @@ const App = () => {
 
   const uploadCollection = async () => {
     try {
-      const result = await Storage.put('Collection', JSON.stringify(collection), {
+       await Storage.put('Collection', JSON.stringify(collection), {
         level: 'private',
         contentType: 'application/json',
         progressCallback(progress) {
           console.log(`Uploaded: ${progress.loaded}/${progress.total}`);
         }
       });
+      
     } catch (err) {
       console.log('save error', err)
     }
@@ -138,15 +140,13 @@ const App = () => {
     const userinfo = async () => {
       try {
         const dledCollection = await Storage.get('Collection', {
-          download: true,
           level: 'private',
-          contentType: 'application/json',
           progressCallback(progress) {
             console.log(`Downloaded: ${progress.loaded}/${progress.total}`);
           }
         })
-        const parsedCollection = await dledCollection.Body.text()
-        setCollection(JSON.parse(parsedCollection))
+        const parsedCollection = await (await fetch(dledCollection)).json()
+        setCollection(parsedCollection)
       } catch (err) {
         console.log('error', err)
       }
@@ -155,11 +155,12 @@ const App = () => {
   }, [])
 
   return (
-    <ColorContext.Provider value={{
+    <CollectionContext.Provider value={{
       colorFilters: colorFilters,
       saveCollection: setCollection,
       collection: { ...collection },
-      alphabetical: alphabeticallySorted
+      alphabetical: alphabeticallySorted,
+      uploadCollection: uploadCollection
     }}>
       <NavigationContainer >
         <DrawerNav.Navigator
@@ -174,57 +175,67 @@ const App = () => {
           drawerPosition="right"
           drawerContent={(props) => <CustomDrawerContent {...props} colorSelection={colorSelection} alphabeticalSort={setAlphabeticallySorted} alphabetical={alphabeticallySorted} />}
         >
-          <DrawerNav.Screen name="Tabs" component={TabScreens} initialParams={{ uploadCollection: uploadCollection }} />
+          <DrawerNav.Screen name="Tabs" component={TabScreens}  />
         </DrawerNav.Navigator>
       </NavigationContainer>
-    </ColorContext.Provider>
+    </CollectionContext.Provider>
   )
 }
 
 export default withAuthenticator(App)
-
+/*
+each container's backgroundColor needs to be the color of the border?
+shadow is for iOS only
+#753BA5 'rgba(117, 59, 165, opacity)' = vaporwave purple
+#11FFFF rgba(17, 255, 255, .4) = vaporwave blue 
+#f5b5db = pinkish
+borders how to go around Views that are parents of Touchableopacity
+*/
 const styles = StyleSheet.create({
   tabContainer: {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     backgroundColor: '#753BA5',
-    height: '6%'
+    height: '6%',
   },
   tabButton: {
     textAlign: 'center',
     justifyContent: 'center',
     width: '50%',
   },
-  highlightedTabButton: {
-    width: '50%',
-    textAlign: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#11FFFF',
-  },
   tabText: {
     color: '#11FFFF',
     textShadowColor: '#11FFFF',
     textShadowRadius: 5,
-    fontWeight: 700,
-    letterSpacing: '.1em',
+    fontWeight: "700",
+    letterSpacing: 1,
     fontSize: 24,
+    textAlign:'center'
+  },
+  highlightedTabButton: {
+    width: '50%',
+    textAlign: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#11FFFF', 
   },
   highlightedTabText: {
     color: '#753BA5',
     textShadowColor: '#753BA5',
     textShadowRadius: 5,
-    fontWeight: 700,
-    letterSpacing: '.1em',
+    fontWeight: "700",
+    letterSpacing: 1,
     fontSize: 24,
+    textAlign:'center'
   },
   signOutButton: {
     height: '90%',
-    textAlign: 'center',
     justifyContent: 'center',
-    width: '30%',
+    width: '35%',
     margin: 5,
     borderRadius: 10,
+    borderWidth:1,
+    borderColor : 'rgba(17, 255, 255, .4)',
     shadowColor: '#11FFFF',
     shadowRadius: 10,
     shadowOpacity: .4,
@@ -233,25 +244,28 @@ const styles = StyleSheet.create({
     color: '#11FFFF',
     textShadowColor: 'white',
     textShadowRadius: 5,
-    fontWeight: 700,
-    letterSpacing: '.1em',
-    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: 1,
+    fontSize: 16,
     textAlign: 'center',
   },
   filtersText: {
     color: '#11FFFF',
     textShadowColor: 'white',
     textShadowRadius: 5,
-    fontWeight: 700,
-    letterSpacing: '.1em',
-    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: 1,
+    fontSize: 16,
+    textAlign: 'center',
   },
   filtersButton: {
     height: '90%',
     textAlign: 'center',
     justifyContent: 'center',
-    width: '40%',
+    width: '50%',
     margin: 3,
+    borderWidth:1,
+    borderColor:'rgba(17, 255, 255, .4)',
     borderRadius: 10,
     shadowColor: '#11FFFF',
     shadowRadius: 10,
@@ -262,18 +276,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     textShadowColor: 'white',
     textShadowRadius: 5,
-    fontWeight: 700,
-    letterSpacing: '.1em',
-    fontSize: 12
+    fontWeight: "700",
+    letterSpacing: 1,
+    fontSize: 10,
   },
   saveCollection: {
     alignContent: 'center',
     justifyContent: 'center',
     borderRadius: 10,
-    width: '40%',
-    marginLeft: 10,
+    width: '55%',
     marginTop: 3,
     height: '90%',
+    borderWidth:1,
+    borderColor: 'rgba(245, 181, 219, .4)',
     borderRadius: 10,
     shadowColor: '#f5b5db',
     shadowRadius: 10,
@@ -284,6 +299,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: '100%',
     width: '100%',
-    marginTop: 0,
+    marginTop: 0, 
   }
 })

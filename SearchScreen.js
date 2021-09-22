@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { StyleSheet, Text, View, ScrollView, ActivityIndicator } from 'react-native';
 import Cardsearch from './Cardsearch';
 import { createTable } from './NewTableRow';
-import { ColorContext } from './App';
+import { CollectionContext } from './CollectionContext';
 
 const MTGForeignNames = (scryCards, mtgCards) => {
 
@@ -52,7 +52,7 @@ Object structure for each card entry in totalCards:
 const SearchScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false)
   const [totalCards, setTotalCards] = useState()
-  const { colorFilters, saveCollection, collection, alphabetical } = useContext(ColorContext)
+  const { colorFilters, saveCollection, collection, alphabetical } = useContext(CollectionContext)
 
   async function cardFetch(val) {
     setLoading(true)

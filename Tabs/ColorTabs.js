@@ -69,7 +69,7 @@ const AlphabetSortButton = ({ alphabetical, alphabeticalSort }) => {
           color: alphabetical ? 'black' : '#D8008D',
           textAlign: 'center',
           fontSize: 18,
-          fontWeight: 700,
+          fontWeight: "700",
           textShadowColor: alphabetical ? '#13081C' : '#D8008D',
           textShadowRadius: 5,
         }}>
