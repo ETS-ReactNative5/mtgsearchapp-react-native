@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { StyleSheet, Text, View, ScrollView, ActivityIndicator } from 'react-native';
 import Cardsearch from './Cardsearch';
-import { createTable } from './NewTableRow';
+import { NewTableRow } from './NewTableRow';
 import { CollectionContext } from './CollectionContext';
 
 const MTGForeignNames = (scryCards, mtgCards) => {
@@ -49,20 +49,24 @@ Object structure for each card entry in totalCards:
   [card set] : data
 }
 */
-const SearchScreen = ({ navigation, route }) => {
+const SearchScreen = () => {
   const [loading, setLoading] = useState(false)
   const [totalCards, setTotalCards] = useState()
-  const { colorFilters, saveCollection, collection, alphabetical } = useContext(CollectionContext)
+  const { saveCollection, collection, alphabetical, uploadCollection } = useContext(CollectionContext)
 
   async function cardFetch(val) {
-    setLoading(true)
-    const scryData = await (await fetch("https://api.scryfall.com/cards/search?unique=prints&q=" + val)).json();
-    const MTGdata = await (await fetch("https://api.magicthegathering.io/v1/cards?name=" + val)).json();
-    const scry = scryData.data
-    const mtg = MTGdata.cards
+    try {
+      setLoading(true)
+      const scryData = await (await fetch("https://api.scryfall.com/cards/search?unique=prints&q=" + val)).json();
+      const MTGdata = await (await fetch("https://api.magicthegathering.io/v1/cards?name=" + val)).json();
+      const scry = scryData.data
+      const mtg = MTGdata.cards
 
-    setTotalCards(MTGForeignNames(scry, mtg))
-    setLoading(false)
+      setTotalCards(MTGForeignNames(scry, mtg))
+      setLoading(false)
+    } catch (err) {
+      console.info('error fetching card data', err)
+    }
   }
 
   /*
@@ -92,11 +96,17 @@ const SearchScreen = ({ navigation, route }) => {
         }
       },
     })
+    uploadCollection({
+      ...totalCards[name],
+      [set]: {
+        ...totalCards[name][set],
+        amount: Number(amountVal)
+      }
+    }, name, 'amount')
   }
-
-  const removeRow = (e) => {
+  const removeRow = (cardName) => {
     const newTotalCards = totalCards
-    delete newTotalCards[e]
+    delete newTotalCards[cardName]
     setTotalCards({ ...newTotalCards })
   }
 
@@ -104,10 +114,12 @@ const SearchScreen = ({ navigation, route }) => {
     <>
       <ScrollView style={styles.container} scrollEnabled={true}>
         <View style={styles.buttonContainer}>
-          <Cardsearch multiline numberOfLines={1} style={styles.searchstyle} clickHandlerProp={cardFetch} />
+          <Cardsearch  style={styles.searchstyle} clickHandlerProp={cardFetch} />
         </View>
         {loading && <View><Text>...Loading</Text><ActivityIndicator size="large"></ActivityIndicator></View>}
-        {createTable(totalCards, { colors: colorFilters, alphabetical: alphabetical }, removeRow, changeCardDataAmount)}
+        {totalCards && Object.keys(totalCards).sort((a,z)=> alphabetical ? a.localeCompare(z) : z.localeCompare(a) ).map(card => {
+                    return <NewTableRow key={card} changeAmount={changeCardDataAmount} removeRow={removeRow} name={card} mtginfo={totalCards[card]} />;
+                })}
       </ScrollView>
     </>
   );
@@ -124,15 +136,12 @@ const styles = StyleSheet.create({
   },
   searchstyle: {
     flex: 1,
-    height: 100,
     width: '80%',
     alignContent: 'space-around',
   },
   container: {
-    height: 100,
     overflow: 'scroll',
     backgroundColor: '#753BA5',
-
   },
 });
 

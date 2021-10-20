@@ -1,15 +1,16 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, LogBox } from 'react-native';
 import { NavigationContainer, DrawerActions, getFocusedRouteNameFromRoute } from "@react-navigation/native"
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CollectionScreen } from './CollectionScreen';
 import { SearchScreen } from './SearchScreen';
 import { CustomDrawerContent } from './Tabs/ColorTabs';
-import { Amplify, Auth, Storage } from 'aws-amplify'
+import { Amplify, Auth, DataStore } from 'aws-amplify'
 import awsmobile from './src/aws-exports'
 import { withAuthenticator } from 'aws-amplify-react-native'
 import { CollectionContext } from './CollectionContext'
+import { Users, Card, CardSet } from './src/models';
 
 Amplify.configure({
   ...awsmobile,
@@ -21,15 +22,14 @@ Amplify.configure({
 const DrawerNav = createDrawerNavigator()
 const Tab = createBottomTabNavigator();
 
-const TabScreens = ({route }) => {
+const TabScreens = ({ route }) => {
   const [currentRoute, setCurrentRoute] = useState()
-  const {uploadCollection} = useContext(CollectionContext)
 
   useEffect(() => {
     setCurrentRoute(getFocusedRouteNameFromRoute(route))
-  },[route])
+  }, [route])
 
-  // console.log('tab route', route)
+
   return (
     <Tab.Navigator
       tabBar={({ navigation }) =>
@@ -68,9 +68,6 @@ const TabScreens = ({route }) => {
             <TouchableOpacity style={styles.filtersButton} title="Filters" onPress={() => { navigation.dispatch(DrawerActions.toggleDrawer()) }}>
               <Text style={styles.filtersText} >Filters</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() =>uploadCollection()} style={styles.saveCollection}>
-              <Text style={styles.saveCollectionText} >Save{"\n"}Collection</Text>
-            </TouchableOpacity>
           </View>
         ),
       })}>
@@ -108,6 +105,7 @@ const App = () => {
   const [colorFilters, setColorFilters] = useState([])
   const [collection, setCollection] = useState({})
   const [alphabeticallySorted, setAlphabeticallySorted] = useState(true)
+  const [currentUser, setCurrentUser] = useState()
 
   const colorSelection = (color) => {
     let currentColors = colorFilters
@@ -117,42 +115,79 @@ const App = () => {
     } else {
       currentColors = currentColors.filter(c => c !== color)
     }
-
     setColorFilters([...currentColors])
   }
 
-  const uploadCollection = async () => {
+  /*
+  if a card doesn't exist in user's collection, it will be added with first argument card of uploadCollection.
+  if a card needs to be updated (amount, new set printing, etc.), card name, set name, and field to update with new val need to be passed.
+  */
+  const uploadCollection = async (card, name, setName, field, val) => {
     try {
-       await Storage.put('Collection', JSON.stringify(collection), {
-        level: 'private',
-        contentType: 'application/json',
-        progressCallback(progress) {
-          console.log(`Uploaded: ${progress.loaded}/${progress.total}`);
-        }
-      });
-      
+      const originalCard = await DataStore.query(Card, c => c.name("eq", name).usersID('eq', currentUser))
+      const cardSetToUpdate = await DataStore.query(CardSet, s => s.set_name('eq', setName).cardID('eq', originalCard[0].id))
+      if (originalCard) {
+          await DataStore.save(CardSet.copyOf(cardSetToUpdate[0], update => {
+            update[field] = val
+          }))
+      } else {
+        const cardToAdd = await DataStore.save(
+          new Card({
+            "name": name,
+            usersID: currentUser
+          }),
+        );
+        Object.entries(card).forEach(async (el) => {
+          await DataStore.save(
+            new CardSet({
+              "amount": el[1].amount,
+              "card_faces": el[1].card_faces,
+              "colors": el[1].colors,
+              "icon_uri": el[1].icon_uri,
+              "multiverse_ids": el[1].multiverse_ids,
+              "name": name,
+              "prices": el[1].prices,
+              "set_name": el[1].set_name,
+              "image_uris": el[1].image_uris,
+              cardID: cardToAdd.id
+            })
+          )
+        })
+        console.info('saved new card', cardToAdd)
+      }
+
     } catch (err) {
-      console.log('save error', err)
+      console.info(`Error saving to amplify DB ${err}`)
     }
   }
 
   useEffect(() => {
     const userinfo = async () => {
       try {
-        const dledCollection = await Storage.get('Collection', {
-          level: 'private',
-          progressCallback(progress) {
-            console.log(`Downloaded: ${progress.loaded}/${progress.total}`);
+        const sessionData = await Auth.currentUserInfo()
+        setCurrentUser(sessionData.attributes.email)
+        const queriedCards = (await DataStore.query(Card)).filter(c => c.usersID === sessionData.attributes.email)
+        const queriedCardSets = await Promise.all((queriedCards.map(async (card) => (await DataStore.query(CardSet)).filter(s => s.cardID === card.id))))
+        const queriedCollection = queriedCardSets.reduce((acc, curr, index) => {
+          acc[curr[0].name] = {}
+          for (let i of curr) {
+            acc[curr[0].name][i.set_name] = {}
+            Object.assign(acc[curr[0].name][i.set_name], i)
+            if (i.card_faces) {
+              acc[curr[0].name][i.set_name].card_faces = JSON.parse(i.card_faces[0])
+            }
           }
-        })
-        const parsedCollection = await (await fetch(dledCollection)).json()
-        setCollection(parsedCollection)
+          return acc
+        }, {})
+        setCollection(queriedCollection)
       } catch (err) {
         console.log('error', err)
       }
     }
     userinfo()
   }, [])
+
+  LogBox.ignoreLogs(['Setting a timer'])
 
   return (
     <CollectionContext.Provider value={{
@@ -175,14 +210,14 @@ const App = () => {
           drawerPosition="right"
           drawerContent={(props) => <CustomDrawerContent {...props} colorSelection={colorSelection} alphabeticalSort={setAlphabeticallySorted} alphabetical={alphabeticallySorted} />}
         >
-          <DrawerNav.Screen name="Tabs" component={TabScreens}  />
+          <DrawerNav.Screen name="Tabs" component={TabScreens} />
         </DrawerNav.Navigator>
       </NavigationContainer>
     </CollectionContext.Provider>
   )
 }
-
 export default withAuthenticator(App)
+
 /*
 each container's backgroundColor needs to be the color of the border?
 shadow is for iOS only
@@ -211,13 +246,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 1,
     fontSize: 24,
-    textAlign:'center'
+    textAlign: 'center'
   },
   highlightedTabButton: {
     width: '50%',
     textAlign: 'center',
     justifyContent: 'center',
-    backgroundColor: '#11FFFF', 
+    backgroundColor: '#11FFFF',
   },
   highlightedTabText: {
     color: '#753BA5',
@@ -226,7 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 1,
     fontSize: 24,
-    textAlign:'center'
+    textAlign: 'center'
   },
   signOutButton: {
     height: '90%',
@@ -234,8 +269,8 @@ const styles = StyleSheet.create({
     width: '35%',
     margin: 5,
     borderRadius: 10,
-    borderWidth:1,
-    borderColor : 'rgba(17, 255, 255, .4)',
+    borderWidth: 1,
+    borderColor: 'rgba(17, 255, 255, .4)',
     shadowColor: '#11FFFF',
     shadowRadius: 10,
     shadowOpacity: .4,
@@ -264,8 +299,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '50%',
     margin: 3,
-    borderWidth:1,
-    borderColor:'rgba(17, 255, 255, .4)',
+    borderWidth: 1,
+    borderColor: 'rgba(17, 255, 255, .4)',
     borderRadius: 10,
     shadowColor: '#11FFFF',
     shadowRadius: 10,
@@ -287,7 +322,7 @@ const styles = StyleSheet.create({
     width: '55%',
     marginTop: 3,
     height: '90%',
-    borderWidth:1,
+    borderWidth: 1,
     borderColor: 'rgba(245, 181, 219, .4)',
     shadowColor: '#f5b5db',
     shadowRadius: 10,
@@ -298,6 +333,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: '100%',
     width: '100%',
-    marginTop: 0, 
+    marginTop: 0,
   }
 })

@@ -4,12 +4,14 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-nativ
 let textToSearch;
 
 const Cardsearch = (props) => {
+  
   const TextChange = (event) => {
-    textToSearch = event;
+    textToSearch = event.nativeEvent.text;
+    props.clickHandlerProp(event.nativeEvent.text)
   }
 
   const handleClick = () => {
-    props.clickHandlerProp(textToSearch)
+    props.clickHandlerProp(textToSearch);
   }
 
   return (
@@ -19,7 +21,7 @@ const Cardsearch = (props) => {
           Changing the amount will add them to your collection.
           Clicking a set name will bring up different languages for each card.
         </Text>
-        <TextInput {...props} style={styles.textinput} onChangeText={(e) => TextChange(e)}></TextInput>
+        <TextInput {...props} style={styles.textinput} onSubmitEditing={(e) => TextChange(e)}></TextInput>
       </View>
       <TouchableOpacity style={styles.searchButton} onPress={() => handleClick()}>
         <Text style={styles.searchButtonText}>Search{"\n"}for{"\n"}Cards</Text>
@@ -74,7 +76,7 @@ const styles = StyleSheet.create({
   textinput: {
     borderColor: 'white',
     backgroundColor: 'white',
-    height: 25,
+    // height:100,
   },
   
 });

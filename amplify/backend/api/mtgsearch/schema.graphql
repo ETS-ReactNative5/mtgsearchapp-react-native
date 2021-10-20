@@ -1,10 +1,29 @@
-type Collections @model @auth(rules: [{allow: public}]) {
+type CardSet @model @auth(rules: [{allow: public}]) @key(name: "byCard", fields: ["cardID"]) {
   id: ID!
-  collection: AWSJSON
+  amount: Int
+  card_faces: [AWSJSON]
+  colors: [String]
+  icon_uri: String
+  multiverse_ids: [Int]
+  name: String
+  prices: AWSJSON
+  set_name: String
+  image_uris: AWSJSON
+  cardID: ID
+}
+
+type Card @model @auth(rules: [{allow: public}]) @key(name: "byUsers", fields: ["usersID"]) {
+  id: ID!
+  usersID: ID
+  name: String
+  CardSets: [CardSet] @connection(keyName: "byCard", fields: ["id"])
+  sets: AWSJSON
 }
 
 type Users @model @auth(rules: [{allow: public}]) {
   id: ID!
-  Password: String
-  UserCollections: Collections @connection
+  password: String
+  Cards: [Card] @connection(keyName: "byUsers", fields: ["id"])
+  userID: String
 }
+ 

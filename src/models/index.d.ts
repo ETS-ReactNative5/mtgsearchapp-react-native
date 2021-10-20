@@ -4,7 +4,11 @@ import { ModelInit, MutableModel, PersistentModelConstructor } from "@aws-amplif
 
 
 
-type CollectionsMetaData = {
+type CardSetMetaData = {
+  readOnlyFields: 'createdAt' | 'updatedAt';
+}
+
+type CardMetaData = {
   readOnlyFields: 'createdAt' | 'updatedAt';
 }
 
@@ -12,19 +16,41 @@ type UsersMetaData = {
   readOnlyFields: 'createdAt' | 'updatedAt';
 }
 
-export declare class Collections {
+export declare class CardSet {
   readonly id: string;
-  readonly collection?: string;
+  readonly amount?: number;
+  readonly card_faces?: (string | null)[];
+  readonly colors?: (string | null)[];
+  readonly icon_uri?: string;
+  readonly multiverse_ids?: (number | null)[];
+  readonly name?: string;
+  readonly prices?: string;
+  readonly set_name?: string;
+  readonly image_uris?: string;
+  readonly cardID?: string;
   readonly createdAt?: string;
   readonly updatedAt?: string;
-  constructor(init: ModelInit<Collections, CollectionsMetaData>);
-  static copyOf(source: Collections, mutator: (draft: MutableModel<Collections, CollectionsMetaData>) => MutableModel<Collections, CollectionsMetaData> | void): Collections;
+  constructor(init: ModelInit<CardSet, CardSetMetaData>);
+  static copyOf(source: CardSet, mutator: (draft: MutableModel<CardSet, CardSetMetaData>) => MutableModel<CardSet, CardSetMetaData> | void): CardSet;
+}
+
+export declare class Card {
+  readonly id: string;
+  readonly usersID?: string;
+  readonly name?: string;
+  readonly CardSets?: (CardSet | null)[];
+  readonly sets?: string;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+  constructor(init: ModelInit<Card, CardMetaData>);
+  static copyOf(source: Card, mutator: (draft: MutableModel<Card, CardMetaData>) => MutableModel<Card, CardMetaData> | void): Card;
 }
 
 export declare class Users {
   readonly id: string;
-  readonly Password?: string;
-  readonly UserCollections?: Collections;
+  readonly password?: string;
+  readonly Cards?: (Card | null)[];
+  readonly userID?: string;
   readonly createdAt?: string;
   readonly updatedAt?: string;
   constructor(init: ModelInit<Users, UsersMetaData>);

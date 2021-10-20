@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, } from 'react-native';
 import { Icon } from 'react-native-elements'
+import { CollectionContext } from './CollectionContext';
+// import { DataStore } from '@aws-amplify/datastore';
+// import { Users, Card, Sets } from './src/models';
 // import { SvgUri, Svg, G } from 'react-native-svg'
 
 const SetComponenets = (props) => {
@@ -8,6 +11,7 @@ const SetComponenets = (props) => {
     const [pressed, setIsPressed] = useState(false)
 
     const handleOnPress = () => {
+        props.showLanguages()
         let pic = props.setinfo.card_faces !== undefined ? props.setinfo.card_faces[0].image_uris.normal : props.setinfo.image_uris.normal
         let back = props.setinfo.card_faces !== undefined ? props.setinfo.card_faces[1].image_uris.normal : undefined;
         !pressed ? props.highlight(props.set) : props.highlight(undefined)
@@ -39,7 +43,7 @@ const SetComponenets = (props) => {
                 borderColor: 'rgba(255, 0, 0, .4)',
                 borderRadius: 10,
             }} onPress={() => {
-                props.createLanguages(props.setinfo);
+                // props.createLanguages(props.setinfo);
                 handleOnPress()
             }}>
                 <Text style={props.buttonstyle}>{props.set}</Text>
@@ -54,15 +58,21 @@ const SetComponenets = (props) => {
 }
 
 const AmountComponents = (props) => {
-    const [amount, setAmount] = useState(props.mtginfo.amount)
-    const handleAmountChange = (val) => {
-        setAmount(val);
+    const [amount, setAmount] = useState(0)
+
+    const handleAmountChange = (event) => {
+        const val = event.nativeEvent.text
+        setAmount(Number(val));
         props.changeAmount(props.mtginfo.name, props.mtginfo.set_name, val)
     }
     let usd = props.mtginfo.prices.usd ? Number(props.mtginfo.prices.usd) * Number(amount) : 0.00;
     let euros = props.mtginfo.prices.eur ? Number(props.mtginfo.prices.eur) * Number(amount) : 0.00;
     let tix = props.mtginfo.prices.tix ? Number(props.mtginfo.prices.tix) * Number(amount) : 0.00;
     let foil = props.mtginfo.prices.usd_foil ? Number(props.mtginfo.prices.usd_foil) * Number(amount) : 0.00;
+
+    useEffect(() => {
+        setAmount(props.mtginfo.amount)
+    }, [])
 
     return (
         <View style={props.highlightstyle}>
@@ -74,7 +84,11 @@ const AmountComponents = (props) => {
             </View>
             <View className="amountContainer" style={styles.amountContainer}>
                 <Text style={{ color: props.highlightedText }}>Amount</Text>
-                <TextInput style={props.highlightedAmount} className="amount" value={String(props.mtginfo.amount)} keyboardType='numeric' onChangeText={(e) => handleAmountChange(e)}></TextInput>
+                <TextInput style={props.highlightedAmount}
+                    defaultValue={amount > 0 ? String(amount) : ' '}
+                    className="amount"
+                    keyboardType='numeric'
+                    onSubmitEditing={(e) => handleAmountChange(e)}></TextInput>
             </View>
         </View>
     )
@@ -91,47 +105,33 @@ const Language = (props) => {
 }
 //(name, image, flip,  prices, sets, languages, amount)
 export const NewTableRow = (props) => {
+    const { colorFilters } = useContext(CollectionContext)
     const [displayName, setDisplayName] = useState(props.name)
     const [imageUri, setImageUri] = useState(false)
     const [flipUri, setFlipUri] = useState(false)
     const [frontUri, setFrontUri] = useState(false)
     const [currentSet, setCurrentSet] = useState()
-    const [foreignLanguageComps, setForeignLanguageComps] = useState([])
+    const [languagesVisible, setLanguagesVisible] = useState(false)
+    const [sets, setSets] = useState([])
+    const [visibility, setVisibility] = useState(true)
 
-    const sets = Object.keys(props.mtginfo);
-    let image = props.mtginfo[sets[0]].card_faces ? props.mtginfo[sets[0]].card_faces[0].image_uris.normal : props.mtginfo[sets[0]].image_uris.normal;
-    let flip = props.mtginfo[sets[0]].card_faces ? props.mtginfo[sets[0]].card_faces[1].image_uris.normal : '';
-    let languages;
+    useEffect(() => {
+        setSets(Object.keys(props.mtginfo))
+        if (props.mtginfo[Object.keys(props.mtginfo)[0]].card_faces) {
+            setImageUri(props.mtginfo[Object.keys(props.mtginfo)[0]].card_faces[0].image_uris.normal)
+            setFrontUri(props.mtginfo[Object.keys(props.mtginfo)[0]].card_faces[0].image_uris.normal)
+            setFlipUri(props.mtginfo[Object.keys(props.mtginfo)[0]].card_faces[1].image_uris.normal)
+        } else {
+            setImageUri(props.mtginfo[Object.keys(props.mtginfo)[0]].image_uris.normal)
+        }
+    }, [])
 
     const updateImage = (image, name) => {
         setImageUri(image)
         setDisplayName(name)
     }
 
-    const createLanguages = (e) => {
-        const english =  <Language
-            updateImage={updateImage}
-            cardname={props.name}
-            foreignInfo={{
-                imageUrl: image,
-                name: props.name,
-                language: 'English'
-            }}
-            key={props.name + 'English'} />
-
-        languages = e.foreignNames ?
-            e.foreignNames.map(l =>
-                <Language updateImage={updateImage} cardname={e.name} foreignInfo={l} key={l.name + l.language} />)
-            : e.card_faces && e.card_faces[0].foreignNames ?
-                e.card_faces[0].foreignNames.map(l =>
-                    <Language updateImage={updateImage} cardname={e.name} foreignInfo={l} key={l.name + l.language} />)
-                : []
-
-        setForeignLanguageComps([english, ...languages])
-    }
-
     const onImagePress = () => {
-        !flipUri && setFlipUri(flip)
         flipUri !== false && imageUri !== flipUri ? setImageUri(flipUri) : setImageUri(frontUri)
     }
 
@@ -145,13 +145,25 @@ export const NewTableRow = (props) => {
         if (back) setFlipUri(back)
     }
 
+    useEffect(() => {
+        if (colorFilters.length) {
+            console.info(colorFilters)
+            const firstSet = Object.keys(props.mtginfo)[0]
+            props.mtginfo[firstSet].colors.forEach(c => {
+                setVisibility(colorFilters.includes(c))
+            })
+        } else {
+            setVisibility(true)
+        }
+    })
+    
     return (
-        props.visible == true && <View id={props.name + 'Container'} className='rowContainer'>
+        visibility === true && <View id={props.name + 'Container'} className='rowContainer'>
             <Text id={props.name} style={{ color: 'white' }}>{displayName}</Text>
             <View className='cardContainer' style={styles.cardContainer}>
                 <View >
                     <TouchableOpacity onPress={onImagePress} style={styles.cardImageTouchableOpacity}>
-                        <Image id={props.name + 'Image'} source={!imageUri ? { uri: image } : { uri: imageUri }} style={styles.cardImage} ></Image>
+                        <Image id={props.name + 'Image'} source={imageUri && { uri: imageUri }} style={styles.cardImage} ></Image>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => { props.removeRow(props.name) }} style={styles.trashButton}>
                         <Icon name='trash' type='font-awesome' />
@@ -161,7 +173,7 @@ export const NewTableRow = (props) => {
                     {sets.map(i =>
                         <View key={`${props.name}_set_${i}`}>
                             <SetComponenets
-                                createLanguages={createLanguages}
+                                showLanguages={() => setLanguagesVisible(!languagesVisible)}
                                 highlight={rowHighlight}
                                 flipArt={flipArt}
                                 set={i}
@@ -182,36 +194,29 @@ export const NewTableRow = (props) => {
                     )}
                 </View>
             </View>
-            <View style={styles.languageContainer}>
-                {currentSet && foreignLanguageComps.map(i => i)}
-            </View>
+            {currentSet &&
+                <View style={styles.languageContainer}>
+                    <Language
+                        updateImage={updateImage}
+                        cardname={props.name}
+                        foreignInfo={{
+                            imageUrl: imageUri,
+                            name: props.name,
+                            language: 'English'
+                        }}
+                        key={props.name + 'English'} />
+                    {props.mtginfo[currentSet].foreignNames ? 
+                    props.mtginfo[currentSet].foreignNames.map(l =>
+                        <Language updateImage={updateImage} cardname={props.mtginfo[currentSet].name} foreignInfo={l} key={l.name + l.language} />)
+                        : 
+                        (props.mtginfo[currentSet].card_faces && props.mtginfo[currentSet].card_faces[0].foreignNames) &&
+                            props.mtginfo[currentSet].card_faces[0].foreignNames.map(l =>
+                                <Language updateImage={updateImage} cardname={props.mtginfo[currentSet].name} foreignInfo={l} key={l.name + l.language} />)      
+                    }
+                </View>
+            }
         </View>
     )
-}
-
-/*
-returns an array of NewTableRow based on filter options 
-*/
-export const createTable = (cardsObj, filters, removeRow, changeCardDataAmount) => {
-    let displayComponents = []
-
-    for (let i in cardsObj) {
-        displayComponents.push(<NewTableRow visible={true} key={i} changeAmount={changeCardDataAmount} removeRow={removeRow} name={i} mtginfo={cardsObj[i]}></NewTableRow>)
-    }
-    if (filters.colors.length > 0) {
-        displayComponents = displayComponents.map(curr => {
-            let firstSet = Object.keys(curr.props.mtginfo)[0]
-
-            curr.props.mtginfo[firstSet].colors.forEach(c => {
-                if (!filters.colors.includes(c)) curr = React.cloneElement(curr, { visible: false })
-            })
-
-            return curr
-        })
-    }
-
-    displayComponents = filters.alphabetical ? displayComponents.sort((a, z) => a.props.name.localeCompare(z.props.name)) : displayComponents.sort((a, z) => z.props.name.localeCompare(a.props.name))
-    return displayComponents
 }
 
 /*

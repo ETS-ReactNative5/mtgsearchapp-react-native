@@ -1,14 +1,27 @@
 import React, { useContext } from "react";
 import { StyleSheet, View, ScrollView, } from 'react-native';
-import { createTable } from './NewTableRow';
+import { NewTableRow } from './NewTableRow';
 import { CollectionContext } from './CollectionContext';
+import { DataStore } from '@aws-amplify/datastore';
+import { Users, Card, CardSet } from './src/models';
 
 export const CollectionScreen = () => {
-    const { colorFilters, saveCollection, collection, alphabetical } = useContext(CollectionContext)
+    const { saveCollection, collection, alphabetical, uploadCollection } = useContext(CollectionContext)
 
-    const removeRow = (e) => {
+    /*
+    Add delete for DataStore(CardSet)
+    */
+    const removeRow = (cardName) => {
+        (async function removeFromDB() {
+            try {
+                DataStore.delete(Card, c => c.name("eq", cardName))
+                // DataStore.delete(Card, c => c.name("eq", null))//remove this later, added a null card while fucking around
+            } catch (err) {
+                console.info('Error deleting from DB', err)
+            }
+        })()
         const newTotalCards = collection
-        delete newTotalCards[e]
+        delete newTotalCards[cardName]
         saveCollection({ ...newTotalCards })
     }
     /*
@@ -26,14 +39,22 @@ export const CollectionScreen = () => {
                 }
             },
         })
+        uploadCollection({
+            ...collection[name],
+            [set]: {
+                ...collection[name][set],
+                amount: Number(amountVal)
+            }
+        }, name, set, 'amount', Number(amountVal))
     }
-
     return (
         <>
             <ScrollView style={styles.container} scrollEnabled={true}>
                 <View style={styles.buttonContainer}>
                 </View>
-                {createTable(collection, { colors: colorFilters, alphabetical: alphabetical }, removeRow, changeCardDataAmount)}
+                {Object.keys(collection).sort((a,z)=> alphabetical ? a.localeCompare(z) : z.localeCompare(a) ).map(card => {
+                    return <NewTableRow key={card} changeAmount={changeCardDataAmount} removeRow={removeRow} name={card} mtginfo={collection[card]} />;
+                })}
             </ScrollView>
         </>
     )
