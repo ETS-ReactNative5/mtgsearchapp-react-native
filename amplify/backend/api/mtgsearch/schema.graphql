@@ -12,18 +12,10 @@ type CardSet @model @auth(rules: [{allow: public}]) @key(name: "byCard", fields:
   cardID: ID
 }
 
-type Card @model @auth(rules: [{allow: public}]) @key(name: "byUsers", fields: ["usersID"]) {
+type Card @model @auth(rules: [{allow: public}]) {
   id: ID!
-  usersID: ID
   name: String
   CardSets: [CardSet] @connection(keyName: "byCard", fields: ["id"])
   sets: AWSJSON
-}
-
-type Users @model @auth(rules: [{allow: public}]) {
-  id: ID!
-  password: String
-  Cards: [Card] @connection(keyName: "byUsers", fields: ["id"])
-  userID: String
 }
  

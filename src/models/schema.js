@@ -144,13 +144,6 @@ export const schema = {
                     "isRequired": true,
                     "attributes": []
                 },
-                "usersID": {
-                    "name": "usersID",
-                    "isArray": false,
-                    "type": "ID",
-                    "isRequired": false,
-                    "attributes": []
-                },
                 "name": {
                     "name": "name",
                     "isArray": false,
@@ -204,95 +197,6 @@ export const schema = {
                     "properties": {}
                 },
                 {
-                    "type": "key",
-                    "properties": {
-                        "name": "byUsers",
-                        "fields": [
-                            "usersID"
-                        ]
-                    }
-                },
-                {
-                    "type": "auth",
-                    "properties": {
-                        "rules": [
-                            {
-                                "allow": "public",
-                                "operations": [
-                                    "create",
-                                    "update",
-                                    "delete",
-                                    "read"
-                                ]
-                            }
-                        ]
-                    }
-                }
-            ]
-        },
-        "Users": {
-            "name": "Users",
-            "fields": {
-                "id": {
-                    "name": "id",
-                    "isArray": false,
-                    "type": "ID",
-                    "isRequired": true,
-                    "attributes": []
-                },
-                "password": {
-                    "name": "password",
-                    "isArray": false,
-                    "type": "String",
-                    "isRequired": false,
-                    "attributes": []
-                },
-                "Cards": {
-                    "name": "Cards",
-                    "isArray": true,
-                    "type": {
-                        "model": "Card"
-                    },
-                    "isRequired": false,
-                    "attributes": [],
-                    "isArrayNullable": true,
-                    "association": {
-                        "connectionType": "HAS_MANY",
-                        "associatedWith": "usersID"
-                    }
-                },
-                "userID": {
-                    "name": "userID",
-                    "isArray": false,
-                    "type": "String",
-                    "isRequired": false,
-                    "attributes": []
-                },
-                "createdAt": {
-                    "name": "createdAt",
-                    "isArray": false,
-                    "type": "AWSDateTime",
-                    "isRequired": false,
-                    "attributes": [],
-                    "isReadOnly": true
-                },
-                "updatedAt": {
-                    "name": "updatedAt",
-                    "isArray": false,
-                    "type": "AWSDateTime",
-                    "isRequired": false,
-                    "attributes": [],
-                    "isReadOnly": true
-                }
-            },
-            "syncable": true,
-            "pluralName": "Users",
-            "attributes": [
-                {
-                    "type": "model",
-                    "properties": {}
-                },
-                {
                     "type": "auth",
                     "properties": {
                         "rules": [
@@ -313,5 +217,5 @@ export const schema = {
     },
     "enums": {},
     "nonModels": {},
-    "version": "04f55b6bebb46d96ae252ddc29b8404b"
+    "version": "2ca747fa845dc99fa746de8a1aa09712"
 };

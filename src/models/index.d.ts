@@ -12,10 +12,6 @@ type CardMetaData = {
   readOnlyFields: 'createdAt' | 'updatedAt';
 }
 
-type UsersMetaData = {
-  readOnlyFields: 'createdAt' | 'updatedAt';
-}
-
 export declare class CardSet {
   readonly id: string;
   readonly amount?: number;
@@ -36,7 +32,6 @@ export declare class CardSet {
 
 export declare class Card {
   readonly id: string;
-  readonly usersID?: string;
   readonly name?: string;
   readonly CardSets?: (CardSet | null)[];
   readonly sets?: string;
@@ -44,15 +39,4 @@ export declare class Card {
   readonly updatedAt?: string;
   constructor(init: ModelInit<Card, CardMetaData>);
   static copyOf(source: Card, mutator: (draft: MutableModel<Card, CardMetaData>) => MutableModel<Card, CardMetaData> | void): Card;
-}
-
-export declare class Users {
-  readonly id: string;
-  readonly password?: string;
-  readonly Cards?: (Card | null)[];
-  readonly userID?: string;
-  readonly createdAt?: string;
-  readonly updatedAt?: string;
-  constructor(init: ModelInit<Users, UsersMetaData>);
-  static copyOf(source: Users, mutator: (draft: MutableModel<Users, UsersMetaData>) => MutableModel<Users, UsersMetaData> | void): Users;
 }

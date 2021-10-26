@@ -3,7 +3,7 @@ import { StyleSheet, View, ScrollView, } from 'react-native';
 import { NewTableRow } from './NewTableRow';
 import { CollectionContext } from './CollectionContext';
 import { DataStore } from '@aws-amplify/datastore';
-import { Users, Card, CardSet } from './src/models';
+import { Card } from './src/models';
 
 export const CollectionScreen = () => {
     const { saveCollection, collection, alphabetical, uploadCollection } = useContext(CollectionContext)
@@ -69,10 +69,4 @@ const styles = StyleSheet.create({
         overflow: 'scroll',
         backgroundColor: '#753BA5',
     },
-    saveCollection: {
-        backgroundColor: '#f5b5db',
-        alignContent: 'center',
-        justifyContent: 'center',
-        borderRadius: 10
-    }
 })

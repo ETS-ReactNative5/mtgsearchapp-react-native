@@ -10,8 +10,14 @@ import { Amplify, Auth, DataStore } from 'aws-amplify'
 import awsmobile from './src/aws-exports'
 import { withAuthenticator } from 'aws-amplify-react-native'
 import { CollectionContext } from './CollectionContext'
-import { Users, Card, CardSet } from './src/models';
-
+import { Card, CardSet } from './src/models';
+/*
+1) Add update button to collection screen to check for new set printing and update prices
+2) add search bar to collection screen?
+*/
+/*
+WARNING: Project imported from github. This means dependencies and aws storage crednetials may be missing. This will cause error warnings on load. They will have to be installed on this platform.
+*/
 Amplify.configure({
   ...awsmobile,
   Analytics: {
@@ -187,7 +193,7 @@ const App = () => {
     userinfo()
   }, [])
 
-  LogBox.ignoreLogs(['Setting a timer'])
+  // LogBox.ignoreLogs(['Setting a timer'])
 
   return (
     <CollectionContext.Provider value={{
@@ -303,28 +309,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(17, 255, 255, .4)',
     borderRadius: 10,
     shadowColor: '#11FFFF',
-    shadowRadius: 10,
-    shadowOpacity: .4,
-  },
-  saveCollectionText: {
-    color: '#f5b5db',
-    textAlign: "center",
-    textShadowColor: 'white',
-    textShadowRadius: 5,
-    fontWeight: "700",
-    letterSpacing: 1,
-    fontSize: 10,
-  },
-  saveCollection: {
-    alignContent: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    width: '55%',
-    marginTop: 3,
-    height: '90%',
-    borderWidth: 1,
-    borderColor: 'rgba(245, 181, 219, .4)',
-    shadowColor: '#f5b5db',
     shadowRadius: 10,
     shadowOpacity: .4,
   },

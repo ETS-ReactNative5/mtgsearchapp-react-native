@@ -129,11 +129,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
   },
-  textinput: {
-    borderColor: 'black',
-    borderWidth: 1,
-    width: '80%',
-  },
   searchstyle: {
     flex: 1,
     width: '80%',
