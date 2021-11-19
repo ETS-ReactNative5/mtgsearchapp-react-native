@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, LogBox } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { NavigationContainer, DrawerActions, getFocusedRouteNameFromRoute } from "@react-navigation/native"
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -129,10 +129,11 @@ const App = () => {
   if a card needs to be updated (amount, new set printing, etc.), card name, set name, and field to update with new val need to be passed.
   */
   const uploadCollection = async (card, name, setName, field, val) => {
+  
     try {
-      const originalCard = await DataStore.query(Card, c => c.name("eq", name).usersID('eq', currentUser))
-      const cardSetToUpdate = await DataStore.query(CardSet, s => s.set_name('eq', setName).cardID('eq', originalCard[0].id))
-      if (originalCard) {
+      const originalCard = await DataStore.query(Card, c => c.name("eq", name).userID('eq', currentUser))     
+      if (originalCard.length) {
+        const cardSetToUpdate = await DataStore.query(CardSet, s => s.set_name('eq', setName).cardID('eq', originalCard[0].id))
           await DataStore.save(CardSet.copyOf(cardSetToUpdate[0], update => {
             update[field] = val
           }))
@@ -140,7 +141,7 @@ const App = () => {
         const cardToAdd = await DataStore.save(
           new Card({
             "name": name,
-            usersID: currentUser
+            "userID": currentUser
           }),
         );
         Object.entries(card).forEach(async (el) => {
@@ -172,7 +173,7 @@ const App = () => {
       try {
         const sessionData = await Auth.currentUserInfo()
         setCurrentUser(sessionData.attributes.email)
-        const queriedCards = (await DataStore.query(Card)).filter(c => c.usersID === sessionData.attributes.email)
+        const queriedCards = (await DataStore.query(Card)).filter(c => c.userID === sessionData.attributes.email)
         const queriedCardSets = await Promise.all((queriedCards.map(async (card) => (await DataStore.query(CardSet)).filter(s => s.cardID === card.id))))
         const queriedCollection = queriedCardSets.reduce((acc, curr, index) => {
           acc[curr[0].name] = {}
@@ -201,7 +202,8 @@ const App = () => {
       saveCollection: setCollection,
       collection: { ...collection },
       alphabetical: alphabeticallySorted,
-      uploadCollection: uploadCollection
+      uploadCollection: uploadCollection,
+      user: currentUser,
     }}>
       <NavigationContainer >
         <DrawerNav.Navigator

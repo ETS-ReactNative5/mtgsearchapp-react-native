@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import Svg, {Path} from 'react-native-svg'
 
 let textToSearch;
 
@@ -8,6 +9,7 @@ const Cardsearch = (props) => {
   const TextChange = (event) => {
     textToSearch = event.nativeEvent.text;
     props.clickHandlerProp(event.nativeEvent.text)
+    
   }
 
   const handleClick = () => {
@@ -21,10 +23,19 @@ const Cardsearch = (props) => {
           Changing the amount will add them to your collection.
           Clicking a set name will bring up different languages for each card.
         </Text>
-        <TextInput {...props} style={styles.textinput} onSubmitEditing={(e) => TextChange(e)}></TextInput>
+        <TextInput {...props} style={styles.textinput} 
+        onChange={(e)=>textToSearch = e.nativeEvent.text} 
+        onSubmitEditing={(e) => TextChange(e)}></TextInput>
       </View>
       <TouchableOpacity style={styles.searchButton} onPress={() => handleClick()}>
-        <Text style={styles.searchButtonText}>Search{"\n"}for{"\n"}Cards</Text>
+        <Svg 
+        width='42'
+        height='42'
+        viewBox='0 0 26 26'
+        >
+          <Path stroke="#11FFFF"
+          d="M15.853 16.56c-1.683 1.517-3.911 2.44-6.353 2.44-5.243 0-9.5-4.257-9.5-9.5s4.257-9.5 9.5-9.5 9.5 4.257 9.5 9.5c0 2.442-.923 4.67-2.44 6.353l7.44 7.44-.707.707-7.44-7.44zm-6.353-15.56c4.691 0 8.5 3.809 8.5 8.5s-3.809 8.5-8.5 8.5-8.5-3.809-8.5-8.5 3.809-8.5 8.5-8.5z" />
+        </Svg>
       </TouchableOpacity>
     </View>
   )
@@ -51,17 +62,8 @@ const styles = StyleSheet.create({
     height:'60%'
   },
   searchButton: {
-    textAlign: 'center',
-    justifyContent: 'center',
-    alignContent:'center',
-    margin: 3,
-    borderColor : 'rgba(17, 255, 255, .4)',
-    borderWidth:1,
-    borderRadius: 10,
-    top: '15%',
-    shadowColor: '#11FFFF',
-    shadowRadius: 10,
-    shadowOpacity: .4,
+    marginLeft: 10,
+    top: '25%',
     width:'18.5%'
   },
   searchButtonText: {

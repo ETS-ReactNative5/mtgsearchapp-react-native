@@ -61,7 +61,6 @@ const SearchScreen = () => {
       const MTGdata = await (await fetch("https://api.magicthegathering.io/v1/cards?name=" + val)).json();
       const scry = scryData.data
       const mtg = MTGdata.cards
-
       setTotalCards(MTGForeignNames(scry, mtg))
       setLoading(false)
     } catch (err) {
@@ -95,7 +94,8 @@ const SearchScreen = () => {
           amount: Number(amountVal)
         }
       },
-    })
+    });
+
     uploadCollection({
       ...totalCards[name],
       [set]: {
@@ -104,6 +104,7 @@ const SearchScreen = () => {
       }
     }, name, 'amount')
   }
+
   const removeRow = (cardName) => {
     const newTotalCards = totalCards
     delete newTotalCards[cardName]

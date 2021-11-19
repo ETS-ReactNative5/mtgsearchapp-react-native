@@ -35,6 +35,7 @@ export declare class Card {
   readonly name?: string;
   readonly CardSets?: (CardSet | null)[];
   readonly sets?: string;
+  readonly userID?: string;
   readonly createdAt?: string;
   readonly updatedAt?: string;
   constructor(init: ModelInit<Card, CardMetaData>);

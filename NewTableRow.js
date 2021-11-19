@@ -2,63 +2,40 @@ import React, { useEffect, useState, useContext } from 'react';
 import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, } from 'react-native';
 import { Icon } from 'react-native-elements'
 import { CollectionContext } from './CollectionContext';
-// import { DataStore } from '@aws-amplify/datastore';
-// import { Users, Card, Sets } from './src/models';
-// import { SvgUri, Svg, G } from 'react-native-svg'
 
 const SetComponenets = (props) => {
-    // const [svgSource, setSvgSource] = useState(undefined)
     const [pressed, setIsPressed] = useState(false)
 
     const handleOnPress = () => {
         props.showLanguages()
-        let pic = props.setinfo.card_faces !== undefined ? props.setinfo.card_faces[0].image_uris.normal : props.setinfo.image_uris.normal
-        let back = props.setinfo.card_faces !== undefined ? props.setinfo.card_faces[1].image_uris.normal : undefined;
+        let pic = props.setinfo.card_faces !== null ? props.setinfo.card_faces[0].image_uris.normal : props.setinfo.image_uris.normal
+        let back = props.setinfo.card_faces !== null ? props.setinfo.card_faces[1].image_uris.normal : undefined;
         !pressed ? props.highlight(props.set) : props.highlight(undefined)
         setIsPressed(!pressed)
         props.flipArt(pic, back)
     }
-
-    // useEffect(() => {
-    //     const getSVG = async () => {
-    //         try {
-    //             const SVGstatus = await fetch(props.setinfo.icon_uri)
-    //             if (SVGstatus.status === 200 && SVGstatus.ok === true) {
-    //                 setSvgSource(SVGstatus.url.slice(0, SVGstatus.url.indexOf('?')))
-    //             }
-    //         } catch (err) {
-    //             console.log('error getting set svg', err)
-    //         }
-    //     }
-    //     getSVG()
-    // }, [])
 
     return (
         <View style={props.containerstyle}>
             <TouchableOpacity style={{
                 display: 'flex',
                 flexDirection: 'column',
-                // height: svgSource && 50,
                 borderWidth: 1,
                 borderColor: 'rgba(255, 0, 0, .4)',
                 borderRadius: 10,
             }} onPress={() => {
-                // props.createLanguages(props.setinfo);
                 handleOnPress()
             }}>
                 <Text style={props.buttonstyle}>{props.set}</Text>
-                {/* {svgSource && <Svg viewBox='0 0 200 300' preserveAspectRatio="xMinYMin slice" >
-                    <G  >
-                        <SvgUri uri={svgSource}  />
-                    </G>
-                </Svg>} */}
             </TouchableOpacity>
         </View>
     )
 }
-
+/*
+uses onSubmitEditing, an option specifically for phone keys.
+*/
 const AmountComponents = (props) => {
-    const [amount, setAmount] = useState(0)
+    const [amount, setAmount] = useState()
 
     const handleAmountChange = (event) => {
         const val = event.nativeEvent.text
@@ -85,10 +62,12 @@ const AmountComponents = (props) => {
             <View className="amountContainer" style={styles.amountContainer}>
                 <Text style={{ color: props.highlightedText }}>Amount</Text>
                 <TextInput style={props.highlightedAmount}
-                    defaultValue={amount > 0 ? String(amount) : ' '}
+                    defaultValue={props.mtginfo.amount > 0 ? String(props.mtginfo.amount) : ' '}
                     className="amount"
                     keyboardType='numeric'
-                    onSubmitEditing={(e) => handleAmountChange(e)}></TextInput>
+                    onSubmitEditing={(e) => handleAmountChange(e)}
+                    onBlur = {(e) => handleAmountChange(e) }
+                    ></TextInput>
             </View>
         </View>
     )

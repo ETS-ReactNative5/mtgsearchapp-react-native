@@ -3,19 +3,17 @@ import { StyleSheet, View, ScrollView, } from 'react-native';
 import { NewTableRow } from './NewTableRow';
 import { CollectionContext } from './CollectionContext';
 import { DataStore } from '@aws-amplify/datastore';
-import { Card } from './src/models';
+import { Card, CardSet } from './src/models';
 
 export const CollectionScreen = () => {
-    const { saveCollection, collection, alphabetical, uploadCollection } = useContext(CollectionContext)
+    const { saveCollection, collection, alphabetical, uploadCollection, user } = useContext(CollectionContext)
 
-    /*
-    Add delete for DataStore(CardSet)
-    */
     const removeRow = (cardName) => {
         (async function removeFromDB() {
             try {
+                const originalCard = await DataStore.query(Card, c => c.name("eq", cardName).userID('eq', user))
                 DataStore.delete(Card, c => c.name("eq", cardName))
-                // DataStore.delete(Card, c => c.name("eq", null))//remove this later, added a null card while fucking around
+                DataStore.delete(CardSet, s => s.cardID("eq", originalCard.id))
             } catch (err) {
                 console.info('Error deleting from DB', err)
             }
@@ -38,7 +36,7 @@ export const CollectionScreen = () => {
                     amount: Number(amountVal)
                 }
             },
-        })
+        });
         uploadCollection({
             ...collection[name],
             [set]: {
@@ -47,6 +45,7 @@ export const CollectionScreen = () => {
             }
         }, name, set, 'amount', Number(amountVal))
     }
+   
     return (
         <>
             <ScrollView style={styles.container} scrollEnabled={true}>
