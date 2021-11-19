@@ -66,7 +66,7 @@ const AmountComponents = (props) => {
                     className="amount"
                     keyboardType='numeric'
                     onSubmitEditing={(e) => handleAmountChange(e)}
-                    onBlur = {(e) => handleAmountChange(e) }
+                    // onBlur = {(e) => handleAmountChange(e) }
                     ></TextInput>
             </View>
         </View>
