@@ -115,7 +115,7 @@ const SearchScreen = () => {
     <>
       <ScrollView style={styles.container} scrollEnabled={true}>
         <View style={styles.buttonContainer}>
-          <Cardsearch  style={styles.searchstyle} clickHandlerProp={cardFetch} />
+          <Cardsearch style={styles.searchstyle} clickHandlerProp={cardFetch} />
         </View>
         {loading && <View><Text>...Loading</Text><ActivityIndicator size="large"></ActivityIndicator></View>}
         {totalCards && Object.keys(totalCards).sort((a,z)=> alphabetical ? a.localeCompare(z) : z.localeCompare(a) ).map(card => {

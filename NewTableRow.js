@@ -8,8 +8,8 @@ const SetComponenets = (props) => {
 
     const handleOnPress = () => {
         props.showLanguages()
-        let pic = props.setinfo.card_faces !== null ? props.setinfo.card_faces[0].image_uris.normal : props.setinfo.image_uris.normal
-        let back = props.setinfo.card_faces !== null ? props.setinfo.card_faces[1].image_uris.normal : undefined;
+        let pic = props.setinfo.card_faces !== null && props.setinfo.card_faces !==  undefined ? props.setinfo.card_faces[0].image_uris.normal : props.setinfo.image_uris.normal
+        let back = props.setinfo.card_faces !== null && props.setinfo.card_faces !== undefined ? props.setinfo.card_faces[1].image_uris.normal : undefined;
         !pressed ? props.highlight(props.set) : props.highlight(undefined)
         setIsPressed(!pressed)
         props.flipArt(pic, back)
@@ -95,13 +95,14 @@ export const NewTableRow = (props) => {
     const [visibility, setVisibility] = useState(true)
 
     useEffect(() => {
-        setSets(Object.keys(props.mtginfo))
-        if (props.mtginfo[Object.keys(props.mtginfo)[0]].card_faces) {
-            setImageUri(props.mtginfo[Object.keys(props.mtginfo)[0]].card_faces[0].image_uris.normal)
-            setFrontUri(props.mtginfo[Object.keys(props.mtginfo)[0]].card_faces[0].image_uris.normal)
-            setFlipUri(props.mtginfo[Object.keys(props.mtginfo)[0]].card_faces[1].image_uris.normal)
+        const sortedKeys = Object.keys(props.mtginfo).sort()
+        setSets(sortedKeys)
+        if (props.mtginfo[sortedKeys[0]].card_faces) {
+            setImageUri(props.mtginfo[sortedKeys[0]].card_faces[0].image_uris.normal)
+            setFrontUri(props.mtginfo[sortedKeys[0]].card_faces[0].image_uris.normal)
+            setFlipUri(props.mtginfo[sortedKeys[0]].card_faces[1].image_uris.normal)
         } else {
-            setImageUri(props.mtginfo[Object.keys(props.mtginfo)[0]].image_uris.normal)
+            setImageUri(props.mtginfo[sortedKeys[0]].image_uris.normal)
         }
     }, [])
 
@@ -111,7 +112,7 @@ export const NewTableRow = (props) => {
     }
 
     const onImagePress = () => {
-        flipUri !== false && imageUri !== flipUri ? setImageUri(flipUri) : setImageUri(frontUri)
+        if(flipUri) imageUri !== flipUri ? setImageUri(flipUri) : setImageUri(frontUri)
     }
 
     const rowHighlight = (set) => {
@@ -135,7 +136,7 @@ export const NewTableRow = (props) => {
             setVisibility(true)
         }
     })
-    
+   
     return (
         visibility === true && <View id={props.name + 'Container'} className='rowContainer'>
             <Text id={props.name} style={{ color: 'white' }}>{displayName}</Text>
@@ -149,7 +150,7 @@ export const NewTableRow = (props) => {
                     </TouchableOpacity>
                 </View>
                 <View className='infoContainer' style={styles.infoContainer}>
-                    {sets.map(i =>
+                    {sets.sort().map(i =>
                         <View key={`${props.name}_set_${i}`}>
                             <SetComponenets
                                 showLanguages={() => setLanguagesVisible(!languagesVisible)}

@@ -14,6 +14,7 @@ import { Card, CardSet } from './src/models';
 /*
 1) Add update button to collection screen to check for new set printing and update prices
 2) add search bar to collection screen?
+3) Pagination for loading large collections.
 */
 /*
 WARNING: Project imported from github. This means dependencies and aws storage crednetials may be missing. This will cause error warnings on load. They will have to be installed on this platform.
