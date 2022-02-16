@@ -1,0 +1,45 @@
+scalar JSON
+
+type CardSet {
+  id: ID
+  cardID: ID!
+  amount: Int
+  card_faces: JSON
+  colors: [String]
+  icon_uri: String
+  multiverse_ids: [Int]
+  name: String
+  prices: JSON
+  set_name: String!
+  image_uris: JSON
+}
+
+type Card{
+  id: ID
+  collectionID: ID!
+  CardSets: [CardSet]
+  name: String!
+  sets: [String]
+  colors: [String]
+}
+
+type Collection {
+  id: ID
+  userID: String!
+  Cards: [Card] 
+}
+
+type Query {
+    getCollection(userID: String): Collection
+    getCard(collectionID: uuid, name: String): Card
+    getCardSet(cardID: uuid, set_name: String): CardSet
+    listCollection(collectionID: uuid)
+}
+
+type Mutation {
+    insertCollection(userID: String): Collection
+    updateCardSetAmount(collectionID: uuid, name: String, set_name: String, amount: Int): CardSet
+    insertCard(name: String, colors: _text, sets: _text, collectionID: uuid): Card
+    insertCardSet(amount: Int, colors:_text, icon_uri: String, multiverse_ids: _int4, name: String, prices: json, set_name: String!, image_uris: json, cardID: uuid, card_faces: json): CardSet
+    deleteCardAndSets(collectionID: uuid, name: String)
+}

@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, SafeAreaView } from 'react-native';
 import { NavigationContainer, DrawerActions, getFocusedRouteNameFromRoute } from "@react-navigation/native"
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CollectionScreen } from './CollectionScreen';
 import { SearchScreen } from './SearchScreen';
 import { CustomDrawerContent } from './Tabs/ColorTabs';
-import { Amplify, Auth, DataStore } from 'aws-amplify'
-import awsmobile from './src/aws-exports'
+import { Amplify, API, Auth, DataStore } from 'aws-amplify'
+import awsmobile from './aws-exports'
 import { withAuthenticator } from 'aws-amplify-react-native'
 import { CollectionContext } from './CollectionContext'
-import { Card, CardSet } from './src/models';
+import { getCollection, getCard, getCardSet } from './graphql/queries';
+import { insertCard, insertCardSet, insertCollection, updateCardSetAmount } from './graphql/mutations';
+import dotenv from 'dotenv'
+// import { useQuery } from './hooks/useQuery'
+import { fetchQuery } from './functions/fetchQuery'
 /*
 1) Add update button to collection screen to check for new set printing and update prices
 2) add search bar to collection screen?
@@ -19,12 +23,16 @@ import { Card, CardSet } from './src/models';
 /*
 WARNING: Project imported from github. This means dependencies and aws storage crednetials may be missing. This will cause error warnings on load. They will have to be installed on this platform.
 */
+dotenv.config()
+
 Amplify.configure({
   ...awsmobile,
   Analytics: {
     disabled: true,
   },
 })
+
+const endpointURL = "https://mtgcollector.hasura.app/v1/graphql"
 
 const DrawerNav = createDrawerNavigator()
 const Tab = createBottomTabNavigator();
@@ -40,7 +48,7 @@ const TabScreens = ({ route }) => {
   return (
     <Tab.Navigator
       tabBar={({ navigation }) =>
-        <View style={styles.tabContainer}>
+        <SafeAreaView style={styles.tabContainer}>
           <TouchableOpacity
             style={currentRoute === 'Search' ? styles.highlightedTabButton : styles.tabButton}
             onPress={() => navigation.navigate('Search')}>
@@ -59,7 +67,8 @@ const TabScreens = ({ route }) => {
               Collection
             </Text>
           </TouchableOpacity>
-        </View>}
+        </SafeAreaView>
+      }
       screenOptions={({ navigation }) => ({
         headerTitleAlign: 'center',
         headerStyle: {
@@ -112,7 +121,8 @@ const App = () => {
   const [colorFilters, setColorFilters] = useState([])
   const [collection, setCollection] = useState({})
   const [alphabeticallySorted, setAlphabeticallySorted] = useState(true)
-  const [currentUser, setCurrentUser] = useState()
+  const [userData, setUserData] = useState({ userID: '', collectionID: '' })
+  // const {queriedCollection, error, setQueriedCollection} = useQuery()
 
   const colorSelection = (color) => {
     let currentColors = colorFilters
@@ -126,46 +136,78 @@ const App = () => {
   }
 
   /*
-  if a card doesn't exist in user's collection, it will be added with first argument card of uploadCollection.
-  if a card needs to be updated (amount, new set printing, etc.), card name, set name, and field to update with new val need to be passed.
+  query card by: collectionID, name
+  query card set by: cardId, set_name
+  if card does exist, insert/mutate card set (with card ID as queried card ID) by field (maybe only amount?)
+  if card doesn't exist, insert/mutate new card w/collectionID as userData.collectionID,
+  and card sets w/cardID as newly created card id
+  Postrges array notation uses {} instead of []
+  arrays have to be converted to "{...args}" (ex:"{"black", "blue"}" for colrs) for Hasura Postgres DB
   */
+  /* Put card query and field change in same request? */
   const uploadCollection = async (card, name, setName, field, val) => {
-  
+    // console.info('upload', userData.collectionID, name)
     try {
-      const originalCard = await DataStore.query(Card, c => c.name("eq", name).userID('eq', currentUser))     
-      if (originalCard.length) {
-        const cardSetToUpdate = await DataStore.query(CardSet, s => s.set_name('eq', setName).cardID('eq', originalCard[0].id))
-          await DataStore.save(CardSet.copyOf(cardSetToUpdate[0], update => {
-            update[field] = val
-          }))
-      } else {
-        const cardToAdd = await DataStore.save(
-          new Card({
-            "name": name,
-            "userID": currentUser
-          }),
-        );
-        Object.entries(card).forEach(async (el) => {
-          await DataStore.save(
-            new CardSet({
-              "amount": el[1].amount,
-              "card_faces": el[1].card_faces,
-              "colors": el[1].colors,
-              "icon_uri": el[1].icon_uri,
-              "multiverse_ids": el[1].multiverse_ids,
-              "name": name,
-              "prices": el[1].prices,
-              "set_name": el[1].set_name,
-              "image_uris": el[1].image_uris,
-              cardID: cardToAdd.id
-            })
-          )
-        })
-        console.info('saved new card', cardToAdd)
+      const queriedCard = await fetchQuery(getCard, endpointURL, {
+        collectionID: userData.collectionID,
+        name: name
+      }, "GetCard")
+      if (queriedCard.data.Card.length > 0) {
+        if (field == 'amount') {
+          const updateCardSet = await fetchQuery(updateCardSetAmount, endpointURL, {
+            collectionID: userData.collectionID,
+            set_name: setName,
+            name: name,
+            amount: val
+          }, "UpdateCardSetAmount")
+          console.info('updated card', updateCardSet)
+        }
       }
+      else {
+        const newCard = await fetchQuery(insertCard, endpointURL, {
+          name: name,
+          collectionID: userData.collectionID,
+          sets: `{${Object.keys(card).join()}}`,
+          colors: `{${card[setName].colors.join()}}`
+        }, "InsertCard")
+        // console.info('newcard', newCard)
 
-    } catch (err) {
-      console.info(`Error saving to amplify DB ${err}`)
+        /*
+         instead of looping through each card set: 
+         1)create a batch mutation 
+         2)loop over sets, creating Aliases for each set
+         3)send batched mutation in fetch request
+        */
+        //   const batchSetMutations = `mutation InsertCardSets {
+        //       ${Object.keys(card).map((c,i) => `set${i} : insert_CardSet(objects: {amount: ${(field === 'amount' && setName === c) ? val : card[c].amount}, cardID: ${newCard.data.insert_Card.returning[0].id}, card_faces: ${card[c].card_faces ? JSON.stringify(card[c].card_faces) : []}, colors: {${card[c].colors.join()}}, icon_uri: ${card[c].icon_uri}, image_uris: ${JSON.stringify(card[c].image_uris)}, multiverse_ids: {${card[c].multiverse_ids.join()}}, name: ${name}, prices: ${JSON.stringify(card[c].prices)}, set_name: ${c}}) {
+        //           returning {
+        //             id
+        //           }
+        //         }`
+        //       ).join("\n")}
+        //     }`
+        // const batchNewCardSets = await fetchQuery(batchSetMutations, endpointURL, {}, "InsertCardSets")
+        // console.info(batchNewCardSets)
+
+        Object.keys(card).forEach(async (c) => {
+          const newCardSet = await fetchQuery(insertCardSet, endpointURL, {
+            amount: (field === 'amount' && setName === c) ? val : card[c].amount, 
+            cardID: newCard.data.insert_Card.returning[0].id, 
+            card_faces: card[c].card_faces ? JSON.stringify(card[c].card_faces) : [], 
+            colors: `{${card[c].colors.join()}}`, 
+            icon_uri: card[c].icon_uri, 
+            image_uris: JSON.stringify(card[c].image_uris), 
+            multiverse_ids: `{${card[c].multiverse_ids.join()}}`, 
+            name: name, 
+            prices: JSON.stringify(card[c].prices), 
+            set_name: c
+          }, "InsertCardSet")
+          // console.info( 'newCardSet', newCardSet)
+        })
+      }
+    }
+    catch (err) {
+      console.info(`Error saving card data`, err)
     }
   }
 
@@ -173,30 +215,41 @@ const App = () => {
     const userinfo = async () => {
       try {
         const sessionData = await Auth.currentUserInfo()
-        setCurrentUser(sessionData.attributes.email)
-        const queriedCards = (await DataStore.query(Card)).filter(c => c.userID === sessionData.attributes.email)
-        const queriedCardSets = await Promise.all((queriedCards.map(async (card) => (await DataStore.query(CardSet)).filter(s => s.cardID === card.id))))
-        const queriedCollection = queriedCardSets.reduce((acc, curr, index) => {
-          acc[curr[0].name] = {}
-          for (let i of curr) {
-            acc[curr[0].name][i.set_name] = {}
-            Object.assign(acc[curr[0].name][i.set_name], i)
-            if (i.card_faces) {
-              acc[curr[0].name][i.set_name].card_faces = JSON.parse(i.card_faces[0])
-            }
-          }
-          return acc
-        }, {})
-        setCollection(queriedCollection)
-      } catch (err) {
+
+        const userCollection = await fetchQuery(getCollection, endpointURL, {
+          userID: sessionData.attributes.email
+        }, "GetCollection")
+        // console.info('return user', userCollection)
+
+        if (userCollection.data.Collection.length > 0) {
+          const { userID, id } = userCollection.data.Collection[0]
+
+          setUserData({
+            userID: userID,
+            collectionID: id
+          })
+          
+        } else {
+          const newUserCollection = await fetchQuery(insertCollection, endpointURL, {
+            userID: sessionData.attributes.email
+          }, "InsertCollection")
+
+          setUserData({
+            userID: sessionData.attributes.email,
+            collectionID: newUserCollection.data.insert_Collection.returning[0].id
+          })
+          // console.info(newUserCollection, 'new user')
+        }
+
+      }
+      catch (err) {
         console.log('error', err)
       }
     }
     userinfo()
   }, [])
-
   // LogBox.ignoreLogs(['Setting a timer'])
-
+  // console.info(userData)
   return (
     <CollectionContext.Provider value={{
       colorFilters: colorFilters,
@@ -204,7 +257,7 @@ const App = () => {
       collection: { ...collection },
       alphabetical: alphabeticallySorted,
       uploadCollection: uploadCollection,
-      user: currentUser,
+      userData: userData,
     }}>
       <NavigationContainer >
         <DrawerNav.Navigator
@@ -225,6 +278,7 @@ const App = () => {
     </CollectionContext.Provider>
   )
 }
+// export default App
 export default withAuthenticator(App)
 
 /*

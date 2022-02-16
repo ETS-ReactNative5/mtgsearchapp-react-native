@@ -1,26 +1,72 @@
-import React, { useContext } from "react";
-import { StyleSheet, View, ScrollView, } from 'react-native';
+import React, { useContext, useState, useEffect } from "react";
+import { StyleSheet, View, ScrollView, Text, TouchableOpacity, FlatList } from 'react-native';
 import { NewTableRow } from './NewTableRow';
 import { CollectionContext } from './CollectionContext';
-import { DataStore } from '@aws-amplify/datastore';
-import { Card, CardSet } from './src/models';
+import { fetchQuery } from "./functions/fetchQuery";
+import { listCollection } from "./graphql/queries";
+import { deleteCardAndSets } from "./graphql/mutations";
+
+const endpointURL = "https://mtgcollector.hasura.app/v1/graphql"
+/*
+returns uppercase alphabet array. i + 97 would be lowercase.
+keep incase of future pagination implementation needs.
+*/
+// const alphabet = [...Array(26).keys()].map((_, i) => String.fromCharCode(i + 65))
+// loadCounter, setLoadCounter, keep these for future pagination options? 
+const queryCollection = async (collectionID, collection, saveCollection) => {
+    try {
+        const cardlist = await fetchQuery(listCollection, endpointURL, {
+            collectionID: collectionID
+        }, "ListCollection")
+        // console.info(cardlist)
+        // /*
+        // card_faces, prices, and image_uris need JSON.parse()
+        // */
+        const formattedCardlist = cardlist.data.CardSet.reduce((acc, curr) => {
+            if (!acc[curr.name]) acc[curr.name] = {}
+            const { card_faces, prices, image_uris, ...setData } = curr
+            Object.assign(acc[curr.name], {
+                [curr.set_name]: {
+                    ...setData,
+                    card_faces: card_faces.length > 0 && JSON.parse(card_faces),
+                    prices: JSON.parse(prices),
+                    image_uris: JSON.parse(image_uris)
+                }
+            })
+            return acc
+        }, {})
+        // console.info('formatted card list', formattedCardlist)
+        saveCollection({ ...collection, ...formattedCardlist })
+    }
+    catch (err) {
+        console.log('Error, no collection found:', err)
+    }
+
+}
 
 export const CollectionScreen = () => {
-    const { saveCollection, collection, alphabetical, uploadCollection, user } = useContext(CollectionContext)
-
-    const removeRow = (cardName) => {
-        (async function removeFromDB() {
+    const { saveCollection, collection, alphabetical, uploadCollection, userData } = useContext(CollectionContext)
+    // const [nextToken, setNextToken] = useState()
+    // const [loadCounter, setLoadCounter] = useState(0)
+    // console.info(collection)
+    /*
+    delete will have to delete both Card and CardSet from database.
+    batch CardSet deletes.
+    can potentially batch both Card and CardSet deletes into one resolver and request.
+    */
+    const removeRow = async (cardName) => {
             try {
-                const originalCard = await DataStore.query(Card, c => c.name("eq", cardName).userID('eq', user))
-                DataStore.delete(Card, c => c.name("eq", cardName))
-                DataStore.delete(CardSet, s => s.cardID("eq", originalCard.id))
+                const removeCardAndSets = await fetchQuery(deleteCardAndSets, endpointURL, {
+                    collectionID: userData.collectionID,
+                    name: cardName
+                }, "DeleteCardAndSets")
+                // console.info(removeCardAndSets)
+                const newTotalCards = collection
+                delete newTotalCards[cardName]
+                saveCollection({ ...newTotalCards })
             } catch (err) {
-                console.info('Error deleting from DB', err)
+                console.info('error', err)
             }
-        })()
-        const newTotalCards = collection
-        delete newTotalCards[cardName]
-        saveCollection({ ...newTotalCards })
     }
     /*
     each individual card === totalCards[name]
@@ -45,26 +91,55 @@ export const CollectionScreen = () => {
             }
         }, name, set, 'amount', Number(amountVal))
     }
-   
+
+    useEffect(() => {
+        queryCollection(userData.collectionID, collection, saveCollection)
+    }, [])
+
+    // const handleScroll = () => {
+    //     if (loadCounter <= alphabet.length) {
+    //         queryCollection(loadCounter, setLoadCounter, userData.collectionID, collection, saveCollection)
+    //     }
+    //     console.log('scroll done')
+    // }
+
     return (
         <>
-            <ScrollView style={styles.container} scrollEnabled={true}>
-                <View style={styles.buttonContainer}>
-                </View>
-                {Object.keys(collection).sort((a,z)=> alphabetical ? a.localeCompare(z) : z.localeCompare(a) ).map(card => {
+            <View
+            // style={styles.container} 
+            // scrollEnabled={true}
+            // onScroll={({ nativeEvent }) => handleScroll(nativeEvent)}
+            >
+                {/* <View style={styles.buttonContainer}></View> */}
+                {collection && <FlatList data={Object.keys(collection).sort((a, z) => alphabetical
+                    ? a.localeCompare(z)
+                    : z.localeCompare(a)).map(card => collection[card]
+                    )
+                }
+                    renderItem={({ item }) =>
+                        <NewTableRow changeAmount={changeCardDataAmount} removeRow={removeRow} name={item[Object.keys(item)[0]].name} mtginfo={item} />
+                    }
+                    // onEndReached={handleScroll}
+                    keyExtractor={(item) => `${item[Object.keys(item)[0]].name}_${Object.keys(item)[0]}`}
+                    style={styles.container}
+                    initialNumToRender={10}
+                />}
+                {/* {Object.keys(collection).sort((a, z) => alphabetical ? a.localeCompare(z) : z.localeCompare(a)).map(card => {
                     return <NewTableRow key={card} changeAmount={changeCardDataAmount} removeRow={removeRow} name={card} mtginfo={collection[card]} />;
-                })}
-            </ScrollView>
+                })} */}
+            </View>
         </>
     )
 }
+
+
 
 const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
     },
     container: {
-        height: 100,
+        height: '100%',
         overflow: 'scroll',
         backgroundColor: '#753BA5',
     },

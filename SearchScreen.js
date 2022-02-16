@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { StyleSheet, Text, View, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator, FlatList } from 'react-native';
 import Cardsearch from './Cardsearch';
 import { NewTableRow } from './NewTableRow';
 import { CollectionContext } from './CollectionContext';
@@ -102,7 +102,7 @@ const SearchScreen = () => {
         ...totalCards[name][set],
         amount: Number(amountVal)
       }
-    }, name, 'amount')
+    }, name, set, 'amount', Number(amountVal))
   }
 
   const removeRow = (cardName) => {
@@ -118,9 +118,11 @@ const SearchScreen = () => {
           <Cardsearch style={styles.searchstyle} clickHandlerProp={cardFetch} />
         </View>
         {loading && <View><Text>...Loading</Text><ActivityIndicator size="large"></ActivityIndicator></View>}
-        {totalCards && Object.keys(totalCards).sort((a,z)=> alphabetical ? a.localeCompare(z) : z.localeCompare(a) ).map(card => {
-                    return <NewTableRow key={card} changeAmount={changeCardDataAmount} removeRow={removeRow} name={card} mtginfo={totalCards[card]} />;
-                })}
+        {totalCards &&
+          Object.keys(totalCards).sort((a, z) => alphabetical ? a.localeCompare(z) : z.localeCompare(a)).map(card => {
+            return <NewTableRow key={card} changeAmount={changeCardDataAmount} removeRow={removeRow} name={card} mtginfo={totalCards[card]} />;
+          })
+        }
       </ScrollView>
     </>
   );
@@ -138,6 +140,7 @@ const styles = StyleSheet.create({
   container: {
     overflow: 'scroll',
     backgroundColor: '#753BA5',
+    height: '100%'
   },
 });
 

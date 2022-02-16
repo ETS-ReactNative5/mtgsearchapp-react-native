@@ -13,7 +13,8 @@ const Cardsearch = (props) => {
   }
 
   const handleClick = () => {
-    props.clickHandlerProp(textToSearch);
+    const timer = setTimeout(props.clickHandlerProp(textToSearch), 100);
+    clearTimeout(timer)
   }
 
   return (
@@ -37,8 +38,6 @@ const Cardsearch = (props) => {
           </Svg>
         </TouchableOpacity>
       </View>
-
-
     </View>
   )
 }
