@@ -24,4 +24,3 @@ export const fetchQuery = async (query, url, variables, operationName) =>{
     console.info('fetch error', err)
   }
 }
-// "X-Hasura-Admin-Secret": "cbRN74hcA1wDm0bt53IRC8wcc9AqdDflevGtLzbSEhyVMnlJ81AE7g6UsGtoCb1g"
