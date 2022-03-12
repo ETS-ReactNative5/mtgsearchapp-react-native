@@ -1,10 +1,4 @@
-// export const getCollection = `
-//   query GetCollection($userID: String!) {
-//     Collection(where: {userID: {_eq: $userID}}) {
-//       id
-//     }
-//   }
-// `;
+
 export const getCollection = /* GraphQL */`
   query GetCollection($userID: String!) {
     Collection(where:{userID:{_eq: $userID}}) {

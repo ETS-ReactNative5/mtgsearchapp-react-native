@@ -70,7 +70,6 @@ const AmountComponents = ({changeAmount, mtginfo, highlightstyle, highlightedTex
                     className="amount"
                     keyboardType='numeric'
                     onSubmitEditing={(e) => handleAmountChange(e)}
-                    // onBlur = {(e) => handleAmountChange(e) }
                     ></TextInput>
             </View>
         </View>

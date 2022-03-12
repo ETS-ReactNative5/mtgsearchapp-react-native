@@ -1,5 +1,5 @@
-import React, { useContext, useState, useEffect } from "react";
-import { StyleSheet, View, ScrollView, Text, TouchableOpacity, FlatList } from 'react-native';
+import React, { useContext, useEffect } from "react";
+import { StyleSheet, View, FlatList } from 'react-native';
 import { NewTableRow } from './NewTableRow';
 import { CollectionContext } from './CollectionContext';
 import { fetchQuery } from "./functions/fetchQuery";
@@ -18,7 +18,6 @@ const queryCollection = async (collectionID, collection, saveCollection) => {
         const cardlist = await fetchQuery(listCollection, endpointURL, {
             collectionID: collectionID
         }, "ListCollection")
-        // console.info(cardlist)
         // /*
         // card_faces, prices, and image_uris need JSON.parse()
         // */
@@ -35,7 +34,6 @@ const queryCollection = async (collectionID, collection, saveCollection) => {
             })
             return acc
         }, {})
-        // console.info('formatted card list', formattedCardlist)
         saveCollection({ ...collection, ...formattedCardlist })
     }
     catch (err) {
@@ -46,9 +44,6 @@ const queryCollection = async (collectionID, collection, saveCollection) => {
 
 export const CollectionScreen = () => {
     const { saveCollection, collection, alphabetical, uploadCollection, userData } = useContext(CollectionContext)
-    // const [nextToken, setNextToken] = useState()
-    // const [loadCounter, setLoadCounter] = useState(0)
-    // console.info(collection)
     /*
     delete will have to delete both Card and CardSet from database.
     batch CardSet deletes.
@@ -106,9 +101,6 @@ export const CollectionScreen = () => {
     return (
         <>
             <View
-            // style={styles.container} 
-            // scrollEnabled={true}
-            // onScroll={({ nativeEvent }) => handleScroll(nativeEvent)}
             >
                 {/* <View style={styles.buttonContainer}></View> */}
                 {collection && <FlatList data={Object.keys(collection).sort((a, z) => alphabetical
@@ -119,14 +111,10 @@ export const CollectionScreen = () => {
                     renderItem={({ item }) =>
                         <NewTableRow changeAmount={changeCardDataAmount} removeRow={removeRow} name={item[Object.keys(item)[0]].name} mtginfo={item} />
                     }
-                    // onEndReached={handleScroll}
                     keyExtractor={(item) => `${item[Object.keys(item)[0]].name}_${Object.keys(item)[0]}`}
                     style={styles.container}
                     initialNumToRender={10}
                 />}
-                {/* {Object.keys(collection).sort((a, z) => alphabetical ? a.localeCompare(z) : z.localeCompare(a)).map(card => {
-                    return <NewTableRow key={card} changeAmount={changeCardDataAmount} removeRow={removeRow} name={card} mtginfo={collection[card]} />;
-                })} */}
             </View>
         </>
     )

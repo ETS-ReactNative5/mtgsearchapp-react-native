@@ -6,14 +6,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CollectionScreen } from './CollectionScreen';
 import { SearchScreen } from './SearchScreen';
 import { CustomDrawerContent } from './Tabs/ColorTabs';
-import { Amplify, API, Auth, DataStore } from 'aws-amplify'
+import { Amplify, Auth } from 'aws-amplify'
 import awsmobile from './aws-exports'
 import { withAuthenticator } from 'aws-amplify-react-native'
 import { CollectionContext } from './CollectionContext'
-import { getCollection, getCard, getCardSet } from './graphql/queries';
+import { getCollection, getCard } from './graphql/queries';
 import { insertCard, insertCardSet, insertCollection, updateCardSetAmount } from './graphql/mutations';
 import dotenv from 'dotenv'
-// import { useQuery } from './hooks/useQuery'
 import { fetchQuery } from './functions/fetchQuery'
 /*
 1) Add update button to collection screen to check for new set printing and update prices
@@ -122,7 +121,6 @@ const App = () => {
   const [collection, setCollection] = useState({})
   const [alphabeticallySorted, setAlphabeticallySorted] = useState(true)
   const [userData, setUserData] = useState({ userID: '', collectionID: '' })
-  // const {queriedCollection, error, setQueriedCollection} = useQuery()
 
   const colorSelection = (color) => {
     let currentColors = colorFilters
@@ -146,7 +144,6 @@ const App = () => {
   */
   /* Put card query and field change in same request? */
   const uploadCollection = async (card, name, setName, field, val) => {
-    // console.info('upload', userData.collectionID, name)
     try {
       const queriedCard = await fetchQuery(getCard, endpointURL, {
         collectionID: userData.collectionID,
@@ -170,7 +167,6 @@ const App = () => {
           sets: `{${Object.keys(card).join()}}`,
           colors: `{${card[setName].colors.join()}}`
         }, "InsertCard")
-        // console.info('newcard', newCard)
 
         /*
          instead of looping through each card set: 
@@ -202,7 +198,6 @@ const App = () => {
             prices: JSON.stringify(card[c].prices), 
             set_name: c
           }, "InsertCardSet")
-          // console.info( 'newCardSet', newCardSet)
         })
       }
     }
@@ -219,7 +214,6 @@ const App = () => {
         const userCollection = await fetchQuery(getCollection, endpointURL, {
           userID: sessionData.attributes.email
         }, "GetCollection")
-        // console.info('return user', userCollection)
 
         if (userCollection.data.Collection.length > 0) {
           const { userID, id } = userCollection.data.Collection[0]
@@ -238,9 +232,7 @@ const App = () => {
             userID: sessionData.attributes.email,
             collectionID: newUserCollection.data.insert_Collection.returning[0].id
           })
-          // console.info(newUserCollection, 'new user')
         }
-
       }
       catch (err) {
         console.log('error', err)
@@ -249,7 +241,7 @@ const App = () => {
     userinfo()
   }, [])
   // LogBox.ignoreLogs(['Setting a timer'])
-  // console.info(userData)
+
   return (
     <CollectionContext.Provider value={{
       colorFilters: colorFilters,
